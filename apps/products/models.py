@@ -35,7 +35,7 @@ class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     icon = models.CharField(
-        max_length=10,
+        max_length=100,
         blank=True,
         default='mdi:tag',
         help_text='Iconify icon name eg: heroicons:shopping-bag or mdi:phone'
