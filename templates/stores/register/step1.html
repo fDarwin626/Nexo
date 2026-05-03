@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Become a Seller - step {{ step }} of {{ total_steps }}</h1>
+<h2>Personal Details</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Continue</button>
+</form>
+<p>Already have an account? <a href="{% url 'accounts:login' %}">Login</a></p>
+</body>
+</html>

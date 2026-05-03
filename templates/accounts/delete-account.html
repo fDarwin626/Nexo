@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Delete Account</h1>
+    <p style="color:red;">
+        <strong>Warning:</strong> This action is permanent and cannot be undone.
+        All your data will be deleted.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <label>Enter your password to confirm:</label>
+        <input type="password" name="password" required>
+        <button type="submit" style="background:red; color:white;">
+            Yes, permanently delete my account
+        </button>
+    </form>
+    <a href="/">Cancel</a>
+</body>
+</html>
+
+
+

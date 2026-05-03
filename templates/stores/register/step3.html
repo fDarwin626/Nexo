@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Become a Seller — Step {{ step }} of {{ total_steps }}</h1>
+    <h2>Bank Details</h2>
+    {% if account_type == 'business' %}
+    <p>Please provide your CAC registered business bank account.</p>
+    {% else %}
+    <p>Please provide your personal bank account for payouts.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Continue →</button>
+    </form>
+</body>
+</html>

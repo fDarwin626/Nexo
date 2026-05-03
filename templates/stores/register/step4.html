@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Become a Seller — Step {{ step }} of {{ total_steps }}</h1>
+    <h2>Choose Your Plan</h2>
+
+    <form method="post" id="subscription-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <!-- COMMISSION POLICY -->
+        <div style="border:1px solid #ccc; padding:20px; margin:20px 0; background:#f9f9f9;">
+            <h3>Nexo Seller Policy — Please Read</h3>
+            <p><strong>Subscription:</strong> You are renting a storefront on Nexo.
+            Your subscription fee is non-refundable regardless of sales made.</p>
+
+            <p><strong>Commission Structure:</strong></p>
+            <ul>
+                <li>Monthly revenue ₦0 – ₦500,000: <strong>0% commission</strong></li>
+                <li>Monthly revenue ₦500,001 – ₦2,000,000: <strong>3% commission</strong></li>
+                <li>Monthly revenue ₦2,000,001 – ₦10,000,000: <strong>4% commission</strong></li>
+                <li>Monthly revenue above ₦10,000,000: <strong>5% commission</strong> (maximum)</li>
+            </ul>
+
+            <p>Commission is automatically deducted via Flutterwave split payments
+            before funds reach your account.</p>
+
+            <p><strong>Outside Platform Transactions:</strong>
+            Using Nexo-acquired customer contacts to conduct transactions outside
+            the platform is a violation of this agreement and grounds for immediate
+            account termination without subscription refund.</p>
+
+            <p><strong>Disputes:</strong> Nexo reserves the right to suspend or
+            terminate stores with repeated buyer complaints.</p>
+
+            <label style="display:flex; gap:10px; align-items:center; margin-top:16px;">
+                <input type="checkbox" name="policy_accepted" value="1" required>
+                <span>I have read and agree to the Nexo Seller Policy including
+                the commission structure above.</span>
+            </label>
+        </div>
+
+        <button type="submit">Proceed to Payment →</button>
+    </form>
+</body>
+</html>

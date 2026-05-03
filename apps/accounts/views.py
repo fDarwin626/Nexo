@@ -9,7 +9,7 @@
 # forgot_password    — request password reset email
 # reset_password     — set new password via token
 # ─────────────────────────────────────────────────────────────
-
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
@@ -283,6 +283,61 @@ def reset_password(request, uidb64, token):
         'uidb64': uidb64,
         'token': token,
     })
+
+
+@login_required
+def delete_account(request):
+    """
+    User deletes their own account.
+    POST only — prevents accidental deletion.
+    Soft approach — we ask for password confirmation first.
+    """
+    if request.method == 'POST':
+        password = request.POST.get('password')
+        user = request.user
+
+        # Verify password before deletion
+        if not user.check_password(password):
+            messages.error(
+                request,
+                'Incorrect password. Account not deleted.'
+            )
+            return redirect('accounts:delete_account')
+
+        # If seller — check no active orders
+        if hasattr(user, 'seller_profile'):
+            from apps.orders.models import SellerOrder
+            active_orders = SellerOrder.objects.filter(
+                seller=user.seller_profile,
+                status__in=[
+                    'pending', 'payment_confirmed',
+                    'processing', 'shipped', 'out_for_delivery'
+                ]
+            ).exists()
+
+            if active_orders:
+                messages.error(
+                    request,
+                    'You have active orders. Please fulfill all orders '
+                    'before deleting your account.'
+                )
+                return redirect('accounts:delete_account')
+
+        # Log them out first
+        logout(request)
+
+        # Delete the account
+        user.delete()
+
+        messages.success(
+            request,
+            'Your account has been permanently deleted. '
+            'We are sorry to see you go.'
+        )
+        return redirect('accounts:register')
+
+    return render(request, 'accounts/delete_account.html')
+
 
 
 # ── HELPER FUNCTIONS ─────────────────────────────────────────

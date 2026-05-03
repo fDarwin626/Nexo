@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<h1>Become a seller - step {{ step }} of {{ total_steps }}</h1>
+<h2>Store Details</h2>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Continue</button>
+</form>
+</body>
+</html>

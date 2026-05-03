@@ -315,19 +315,19 @@ class SiteSettings(models.Model):
 
     # ── SUBSCRIPTION PRICES (NGN) ────────────────────────────
     sub_price_1m = models.DecimalField(
-        max_digits=10, decimal_places=2, default=5_000.00,
+        max_digits=10, decimal_places=2, default=600_000.00,
         help_text='1 month subscription price in NGN'
     )
     sub_price_6m = models.DecimalField(
-        max_digits=10, decimal_places=2, default=25_000.00,
+        max_digits=10, decimal_places=2, default=3_000_000.00,
         help_text='6 month subscription price in NGN'
     )
     sub_price_12m = models.DecimalField(
-        max_digits=10, decimal_places=2, default=45_000.00,
+        max_digits=10, decimal_places=2, default=5_500_000.00,
         help_text='12 month subscription price in NGN'
     )
     sub_price_24m = models.DecimalField(
-        max_digits=10, decimal_places=2, default=80_000.00,
+        max_digits=10, decimal_places=2, default=9_000_000.00,
         help_text='24 month subscription price in NGN'
     )
 
