@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Resend Verification Email</h1>
+    <form method="post">
+        {% csrf_token %}
+        <input type="email" name="email" placeholder="your@email.com">
+        <button type="submit">Send New Link</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Create Account</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Register</button>
+    </form>
+    <a href="{% url 'accounts:login' %}">Already have an account?</a>
+
+    <hr>
+    <p>Or sign up with:</p>
+    {% load socialaccount %}
+    <a href="{% provider_login_url 'google' %}">
+        Continue with Google
+    </a>
+</body>
+</html>
