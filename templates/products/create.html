@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Add New Product</h1>
+    <form method="post" id="product-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <div id="variants-section">
+            <h3>Product Variants</h3>
+            <p>Select a category above to see required variants.</p>
+        </div>
+
+        <div id="skus-section">
+            <h3>Stock & Pricing</h3>
+            <p>Add variant combinations with stock and pricing below.</p>
+        </div>
+
+        <!-- SKU data submitted as JSON -->
+        <input type="hidden" name="skus_data" id="skus-data" value="[]">
+
+        <button type="submit">Save Product →</button>
+    </form>
+
+    <script>
+        // Category variants data from Django
+        const categoriesWithVariants = {{ categories_with_variants|safe }};
+
+        document.querySelector('[name=category]').addEventListener('change', function() {
+            const categoryId = this.value;
+            const data = categoriesWithVariants[categoryId];
+            const section = document.getElementById('variants-section');
+
+            if (data && data.required_variants.length > 0) {
+                let html = '<h3>Required Variants for ' + data.name + '</h3>';
+                data.required_variants.forEach(vt => {
+                    html += '<div><strong>' + vt.name + '</strong><select name="variant_' + vt.id + '">';
+                    vt.options.forEach(opt => {
+                        html += '<option value="' + opt.id + '">' + opt.value + '</option>';
+                    });
+                    html += '</select></div>';
+                });
+                section.innerHTML = html;
+            } else {
+                section.innerHTML = '<h3>No variants required for this category</h3>';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -423,3 +423,19 @@ def _send_seller_verification_email(request, user):
         recipient_list=[user.email],
         fail_silently=True,
     )
+
+
+def store_detail(request, store_slug):
+    """Public seller storefront page"""
+    from django.shortcuts import get_object_or_404
+    store = get_object_or_404(
+        SellerProfile,
+        store_slug=store_slug,
+        is_approved=True,
+        status='active'
+    )
+    products = store.products.filter(is_active=True).order_by('-created_at')
+    return render(request, 'stores/storefront.html', {
+        'store': store,
+        'products': products,
+    })

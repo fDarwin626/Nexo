@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+    <p>Price: ₦{{ product.effective_price }}</p>
+    <p>Condition: {{ product.get_condition_display }}</p>
+    <p>Seller: <a href="{% url 'stores:store_detail' product.seller.store_slug %}">
+        {{ product.seller.store_name }}
+    </a></p>
+
+    <h3>Variants</h3>
+    <div id="variant-selector">
+        <!-- Populated by Alpine.js in Section 14 -->
+        {% for sku in skus %}
+        <div>
+            {% for opt in sku.variant_options.all %}
+                {{ opt.variant_type.name }}: {{ opt.value }}
+            {% endfor %}
+            — Stock: {{ sku.stock }} — ₦{{ sku.effective_price }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3>Reviews ({{ product.rating_count }})</h3>
+    {% for review in reviews %}
+    <div>
+        <strong>{{ review.buyer.get_short_name }}</strong>
+        — {{ review.rating }}★
+        <p>{{ review.comment }}</p>
+    </div>
+    {% empty %}
+    <p>No reviews yet.</p>
+    {% endfor %}
+</body>
+</html>

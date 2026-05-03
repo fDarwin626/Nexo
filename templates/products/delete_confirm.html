@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Delete Product</h1>
+    <p>Are you sure you want to delete <strong>{{ product.name }}</strong>?</p>
+    <p style="color:red;">This action cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" style="background:red;color:white;">
+            Yes, delete this product
+        </button>
+    </form>
+    <a href="{% url 'dashboard:seller' %}">Cancel</a>
+</body>
+</html>

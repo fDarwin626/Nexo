@@ -168,10 +168,8 @@ LOGIN_REDIRECT_URL = '/'                   # after login go to homepage
 LOGOUT_REDIRECT_URL = '/'                  # after logout go to homepage
 
 # Tell allauth we don't use username field at all
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 SOCIALACCOUNT_QUERY_EMAIL = True
-
 
 # ── GOOGLE OAUTH ─────────────────────────────────────────────
 SOCIALACCOUNT_PROVIDERS = {
@@ -273,6 +271,9 @@ CORS_ALLOWED_ORIGINS = [
 FLUTTERWAVE_PUBLIC_KEY = env('FLUTTERWAVE_PUBLIC_KEY')
 FLUTTERWAVE_SECRET_KEY = env('FLUTTERWAVE_SECRET_KEY')
 FLUTTERWAVE_ENCRYPTION_KEY = env('FLUTTERWAVE_ENCRYPTION_KEY')
+
+# ── FRONTEND URL ─────────────────────────────────────────────
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:8000')
 
 # ── NEXO BUSINESS SETTINGS ───────────────────────────────────
 # Commission thresholds (monthly revenue in NGN)

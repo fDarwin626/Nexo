@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Add Images — {{ product.name }}</h1>
+    <p>First image uploaded will be the primary image (must be PNG).</p>
+    <p>Gallery images can be PNG or JPG.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="images" multiple accept=".png,.jpg,.jpeg">
+        <button type="submit">Upload Images</button>
+    </form>
+    <a href="{% url 'dashboard:seller' %}">Skip for now</a>
+</body>
+</html>

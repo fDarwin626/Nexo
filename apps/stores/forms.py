@@ -93,6 +93,14 @@ class SellerStep2Form(forms.ModelForm):
     Creates the SellerProfile linked to the user.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['logo'].required = False
+        self.fields['logo'].help_text = (
+            'Optional but recommended. PNG only. '
+            'Transparent background looks best.'
+        )
+
     class Meta:
         model = SellerProfile
         fields = [

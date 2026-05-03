@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>{{ store.store_name }}</h1>
+    <p>{{ store.store_description }}</p>
+    <p>Rating: {{ store.rating_avg }}★ ({{ store.rating_count }} reviews)</p>
+    {% if store.whatsapp_url %}
+    <a href="{{ store.whatsapp_url }}" target="_blank">Chat on WhatsApp</a>
+    {% endif %}
+
+    <h2>Products</h2>
+    {% for product in products %}
+    <div>
+        <a href="{% url 'products:detail' product.slug %}">
+            {{ product.name }} — ₦{{ product.effective_price }}
+        </a>
+    </div>
+    {% empty %}
+    <p>No products yet.</p>
+    {% endfor %}
+</body>
+</html>
