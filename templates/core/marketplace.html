@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Marketplace</h1>
+
+    <form method="get">
+        <input type="text" name="q" value="{{ current_filters.q }}" placeholder="Search products...">
+        <button type="submit">Search</button>
+    </form>
+
+    <h2>Products</h2>
+    {% for product in products %}
+    <div>
+        <a href="{% url 'products:detail' product.slug %}">
+            {{ product.name }}
+        </a>
+        — ₦{{ product.effective_price }}
+        — {{ product.seller.store_name }}
+        — {{ product.condition }}
+    </div>
+    {% empty %}
+    <p>No products found.</p>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <div>
+        {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}">Previous</a>
+        {% endif %}
+        Page {{ products.number }} of {{ products.paginator.num_pages }}
+        {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</body>
+</html>

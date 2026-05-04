@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>{{ category.name }}</h1>
+
+    {% if subcategories %}
+    <div>
+        {% for sub in subcategories %}
+        <a href="{% url 'core:category' sub.slug %}">{{ sub.name }}</a> |
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% for product in products %}
+    <div>
+        <a href="{% url 'products:detail' product.slug %}">
+            {{ product.name }} — ₦{{ product.effective_price }}
+        </a>
+    </div>
+    {% empty %}
+    <p>No products in this category yet.</p>
+    {% endfor %}
+</body>
+</html>

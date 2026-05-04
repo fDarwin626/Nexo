@@ -166,7 +166,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'   # must verify email before login
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[Nexo] '  # prefix on all auth emails
 LOGIN_REDIRECT_URL = '/'                   # after login go to homepage
 LOGOUT_REDIRECT_URL = '/'                  # after logout go to homepage
-
+LOGIN_URL = '/auth/login/'
 # Tell allauth we don't use username field at all
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 SOCIALACCOUNT_QUERY_EMAIL = True

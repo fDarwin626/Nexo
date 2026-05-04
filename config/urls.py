@@ -22,8 +22,9 @@ urlpatterns = [
 
     # ── OUR APPS ─────────────────────────────────────────────
     # Each app manages its own URLs internally
-    # We just mount them here at their base path
 
+    # Core — homepage, marketplace, search, wishlist
+    path('', include('apps.core.urls')),
 
     # Accounts -- custom register, profile, email verify
     path('auth/', include('apps.accounts.urls')),

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>NEXO — Nigerian Marketplace</h1>
+    <p>Converge & Sell</p>
+
+    <h2>Categories</h2>
+    {% for cat in categories %}
+    <a href="{% url 'core:category' cat.slug %}">{{ cat.name }}</a> |
+    {% endfor %}
+
+    <h2>New Arrivals</h2>
+    {% for product in new_arrivals %}
+    <div>
+        <a href="{% url 'products:detail' product.slug %}">
+            {{ product.name }} — ₦{{ product.effective_price }}
+        </a>
+        — {{ product.seller.store_name }}
+    </div>
+    {% empty %}
+    <p>No products yet.</p>
+    {% endfor %}
+
+    <h2>Flash Sales</h2>
+    {% for product in flash_sales %}
+    <div>
+        <a href="{% url 'products:detail' product.slug %}">
+            {{ product.name }} — ₦{{ product.flash_sale_price }}
+        </a>
+    </div>
+    {% empty %}
+    <p>No flash sales right now.</p>
+    {% endfor %}
+</body>
+</html>

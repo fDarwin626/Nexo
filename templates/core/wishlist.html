@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>My Wishlist</h1>
+    {% for item in wishlist_items %}
+    <div>
+        <a href="{% url 'products:detail' item.product.slug %}">
+            {{ item.product.name }}
+        </a>
+        — ₦{{ item.product.effective_price }}
+        (saved at ₦{{ item.price_at_save }})
+        <form method="post" action="{% url 'core:wishlist_toggle' item.product.pk %}">
+            {% csrf_token %}
+            <button type="submit">Remove</button>
+        </form>
+    </div>
+    {% empty %}
+    <p>Your wishlist is empty.</p>
+    {% endfor %}
+</body>
+</html>

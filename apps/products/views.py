@@ -61,22 +61,29 @@ def product_create(request):
 
     if request.method == 'POST':
         form = ProductForm(request.POST)
-
         if form.is_valid():
             with transaction.atomic():
-                # Save product
                 product = form.save(commit=False)
                 if seller:
                     product.seller = seller
-                else:
-                    # Admin posting — use admin's seller profile
-                    # or create products under a special admin store
-                    # For now redirect to Django admin for admin products
-                    messages.info(
-                        request,
-                        'Admin products can be managed via Django admin.'
+                elif request.user.is_staff:
+                    # Admin posting — get or create admin seller profile
+                    admin_profile, created = SellerProfile.objects.get_or_create(
+                        user=request.user,
+                        defaults={
+                            'store_name': 'Nexo Official',
+                            'store_slug': 'nexo-official',
+                            'status': 'active',
+                            'is_approved': True,
+                        }
                     )
-                    return redirect('/admin/products/product/add/')
+                    product.seller = admin_profile
+                else:
+                    messages.error(
+                        request,
+                        'You need an approved seller account to add products.'
+                    )
+                    return redirect('/')
 
                 product.save()
 
