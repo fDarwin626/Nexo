@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Checkout</h1>
+    <form method="post">
+        {% csrf_token %}
+
+        <h3>Delivery</h3>
+        <label>Delivery Type:
+            <select name="delivery_type">
+                <option value="door">Door Delivery</option>
+                <option value="pickup">Pickup</option>
+            </select>
+        </label>
+
+        <label>State:
+            <select name="delivery_state">
+                <option value="">Select state...</option>
+                {% for state in nigerian_states %}
+                <option value="{{ state }}">{{ state }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>Address:
+            <textarea name="delivery_address" placeholder="Full delivery address"></textarea>
+        </label>
+
+        <h3>Payment Method</h3>
+        <label>
+            <input type="radio" name="payment_method" value="pay_now" checked>
+            Pay Now (Online)
+        </label>
+        <label>
+            <input type="radio" name="payment_method" value="pod">
+            Pay on Delivery
+        </label>
+
+        <h3>Coupon</h3>
+        <input type="text" name="coupon_code" placeholder="Enter coupon code">
+
+        <h3>Order Summary</h3>
+        <p>Subtotal: ₦{{ cart.subtotal }}</p>
+
+        <button type="submit">Place Order</button>
+    </form>
+</body>
+</html>

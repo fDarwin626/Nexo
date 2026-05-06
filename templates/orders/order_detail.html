@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Order {{ order.order_ref }}</h1>
+    <p>Status: {{ order.payment_status }}</p>
+    <p>Total: ₦{{ order.total_amount }}</p>
+    <p>Delivery: {{ order.delivery_type }} — {{ order.delivery_state }}</p>
+
+    {% for seller_order in seller_orders %}
+    <div>
+        <h3>{{ seller_order.seller.store_name }}</h3>
+        <p>Status: {{ seller_order.status }}</p>
+        {% for item in seller_order.items.all %}
+        <div>
+            {{ item.product_name }}
+            {% if item.variant_description %}({{ item.variant_description }}){% endif %}
+            x{{ item.quantity }} — ₦{{ item.line_total }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <a href="{% url 'orders:order_list' %}">← All Orders</a>
+</body>
+</html>

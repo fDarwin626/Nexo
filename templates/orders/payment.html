@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Processing Payment...</h1>
+    <p>Total: ₦{{ total_amount }}</p>
+    <p>Please wait while we redirect you to payment.</p>
+
+    <script src="https://checkout.flutterwave.com/v3.js"></script>
+    <script>
+        const paymentData = {{ payment_data|safe }};
+        window.onload = function() {
+            FlutterwaveCheckout({
+                public_key: "{{ flutterwave_public_key }}",
+                tx_ref: paymentData.tx_ref,
+                amount: paymentData.amount,
+                currency: "NGN",
+                redirect_url: paymentData.redirect_url,
+                customer: paymentData.customer,
+                customizations: paymentData.customizations,
+                subaccounts: paymentData.subaccounts,
+                onclose: function() {
+                    window.location.href = "/orders/checkout/";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

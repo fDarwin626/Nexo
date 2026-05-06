@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>My Orders</h1>
+    {% for order in orders %}
+    <div>
+        <a href="{% url 'orders:order_detail' order.order_ref %}">
+            {{ order.order_ref }}
+        </a>
+        — {{ order.payment_status }}
+        — ₦{{ order.total_amount }}
+        — {{ order.created_at|date:"M d, Y" }}
+    </div>
+    {% empty %}
+    <p>No orders yet.</p>
+    {% endfor %}
+</body>
+</html>

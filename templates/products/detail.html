@@ -22,6 +22,20 @@
         {% endfor %}
     </div>
 
+        <h3>Add to Cart</h3>
+    {% for sku in skus %}
+    <form method="post" action="{% url 'orders:cart_add' sku.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit">
+            Add to Cart — ₦{{ sku.effective_price }}
+            ({{ sku.stock }} in stock)
+        </button>
+    </form>
+    {% endfor %}
+
+<a href="{% url 'orders:cart' %}">View Cart</a>
+
     <h3>Reviews ({{ product.rating_count }})</h3>
     {% for review in reviews %}
     <div>
