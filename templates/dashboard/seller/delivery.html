@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Delivery Zones</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<h2>Current Zones</h2>
+{% if zones %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>State</th>
+        <th>Fee (₦)</th>
+        <th>Est. Days</th>
+        <th>Actions</th>
+    </tr>
+    {% for zone in zones %}
+    <tr>
+        <td>{{ zone.state }}</td>
+        <td>₦{{ zone.fee }}</td>
+        <td>{{ zone.estimated_days }} day(s)</td>
+        <td>
+            <form method="post" action="{% url 'dashboard:delete_delivery_zone' zone_id=zone.pk %}">
+                {% csrf_token %}
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No delivery zones added yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Add Delivery Zone</h2>
+{% if available_states %}
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label>State:</label><br>
+        <select name="state">
+            {% for state in available_states %}
+            <option value="{{ state }}">{{ state }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <p>
+        <label>Delivery Fee (₦):</label><br>
+        <input type="number" name="fee" min="0" required>
+    </p>
+    <p>
+        <label>Estimated Delivery Days:</label><br>
+        <input type="number" name="estimated_days" min="1" value="1" required>
+    </p>
+    <button type="submit">Add Zone</button>
+</form>
+{% else %}
+    <p>You have added zones for all available states.</p>
+{% endif %}
+
+</body>
+</html>

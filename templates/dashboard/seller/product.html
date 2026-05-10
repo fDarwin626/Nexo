@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>My Products</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<form method="get">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search products...">
+    <select name="status">
+        <option value="">All</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
+        <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+<hr>
+
+<a href="{% url 'products:create' %}">+ Add New Product</a>
+
+<br><br>
+
+{% if products %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Stock</th>
+        <th>Base Price</th>
+        <th>Restock Deadline</th>
+        <th>Actions</th>
+    </tr>
+    {% for product in products %}
+    <tr>
+        <td>{{ product.name }}</td>
+        <td>{{ product.status_label }}</td>
+        <td>{{ product.total_stock }}</td>
+        <td>₦{{ product.base_price }}</td>
+        <td>
+            {% if product.restock_deadline %}
+                {{ product.restock_deadline|date:"d M Y" }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'products:edit' product_id=product.pk %}">Edit</a> |
+            <a href="{% url 'products:restock' product_id=product.pk %}">Restock</a> |
+            <a href="{% url 'products:delete' product_id=product.pk %}">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No products found.</p>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>My Orders</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<form method="get">
+    <select name="status">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+<hr>
+
+{% if orders %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Order Ref</th>
+        <th>Items</th>
+        <th>Subtotal</th>
+        <th>Payout</th>
+        <th>Payment</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Actions</th>
+    </tr>
+    {% for order in orders %}
+    <tr>
+        <td>{{ order.order.order_ref }}</td>
+        <td>
+            {% for item in order.items.all %}
+                {{ item.product_name }} x{{ item.quantity }}<br>
+            {% endfor %}
+        </td>
+        <td>₦{{ order.subtotal }}</td>
+        <td>₦{{ order.seller_payout }}</td>
+        <td>{{ order.order.get_payment_method_display }}</td>
+        <td>{{ order.get_status_display }}</td>
+        <td>{{ order.created_at|date:"d M Y" }}</td>
+        <td>
+            {% if order.status == 'payment_confirmed' or order.status == 'processing' %}
+                <form method="post" action="{% url 'dashboard:mark_shipped' order_id=order.pk %}">
+                    {% csrf_token %}
+                    <input type="text" name="tracking_number" placeholder="Tracking # (optional)">
+                    <button type="submit">Mark Shipped</button>
+                </form>
+            {% endif %}
+
+            {% if order.status == 'shipped' or order.status == 'out_for_delivery' %}
+                <form method="post" action="{% url 'dashboard:mark_delivered' order_id=order.pk %}">
+                    {% csrf_token %}
+                    <button type="submit">Mark Delivered</button>
+                </form>
+            {% endif %}
+
+            {% if order.tracking_number %}
+                <br>Tracking: {{ order.tracking_number }}
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No orders found.</p>
+{% endif %}
+
+</body>
+</html>

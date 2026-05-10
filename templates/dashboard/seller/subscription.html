@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Subscription</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+{% if active_sub %}
+    <h2>Current Plan: {{ active_sub.get_plan_display }}</h2>
+    <p>Status: {{ active_sub.status }}</p>
+    <p>Start Date: {{ active_sub.start_date }}</p>
+    <p>End Date: {{ active_sub.end_date }}</p>
+    <p>Days Remaining: {{ active_sub.days_remaining }}</p>
+    <p>Urgency: {{ active_sub.urgency_level }}</p>
+    <p>Amount Paid: ₦{{ active_sub.amount_paid }}</p>
+
+    <br>
+    <a href="{% url 'stores:seller_register_step4' %}">
+        <button>Renew Subscription</button>
+    </a>
+{% else %}
+    <p style="color:red;">No active subscription.</p>
+    <a href="{% url 'stores:seller_register_step4' %}">
+        <button>Subscribe Now</button>
+    </a>
+{% endif %}
+
+<hr>
+
+<h2>Subscription History</h2>
+{% if all_subs %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Plan</th>
+        <th>Amount Paid</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Status</th>
+    </tr>
+    {% for sub in all_subs %}
+    <tr>
+        <td>{{ sub.get_plan_display }}</td>
+        <td>₦{{ sub.amount_paid }}</td>
+        <td>{{ sub.start_date }}</td>
+        <td>{{ sub.end_date }}</td>
+        <td>{{ sub.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No subscription history.</p>
+{% endif %}
+
+</body>
+</html>

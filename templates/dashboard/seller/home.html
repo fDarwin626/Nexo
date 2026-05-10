@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Seller Dashboard — {{ seller.store_name }}</h1>
+<p>Status: {{ seller.status }} | Rating: {{ seller.rating_avg }}★ ({{ seller.rating_count }} reviews)</p>
+
+<hr>
+
+<h2>Subscription</h2>
+{% if active_sub %}
+    <p>Plan: {{ active_sub.get_plan_display }}</p>
+    <p>Expires: {{ active_sub.end_date }} ({{ active_sub.days_remaining }} days remaining)</p>
+    <p>Urgency: {{ active_sub.urgency_level }}</p>
+{% else %}
+    <p style="color:red;">No active subscription. <a href="{% url 'dashboard:seller_subscription' %}">Renew now</a></p>
+{% endif %}
+
+<hr>
+
+<h2>Quick Stats</h2>
+<p>Total Active Products: {{ total_products }}</p>
+<p>Active Orders: {{ active_orders }}</p>
+<p>Open Disputes: {{ open_disputes }}</p>
+<p>All-Time Revenue: ₦{{ all_time_revenue }}</p>
+<p>This Month Revenue: ₦{{ seller.monthly_revenue }}</p>
+<p>Commission Rate: {{ seller.current_commission_rate }}%</p>
+
+<hr>
+
+<h2>Recent Orders</h2>
+{% if recent_orders %}
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Order Ref</th>
+            <th>Status</th>
+            <th>Payout</th>
+            <th>Date</th>
+        </tr>
+        {% for order in recent_orders %}
+        <tr>
+            <td>{{ order.order.order_ref }}</td>
+            <td>{{ order.get_status_display }}</td>
+            <td>₦{{ order.seller_payout }}</td>
+            <td>{{ order.created_at|date:"d M Y" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No orders yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Low Stock Alerts</h2>
+{% if low_stock_skus %}
+    <ul>
+        {% for sku in low_stock_skus %}
+        <li>
+            {{ sku.product.name }} — {{ sku.stock }} units left
+            <a href="{% url 'products:restock' product_id=sku.product.pk %}">Restock</a>
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No low stock items.</p>
+{% endif %}
+
+<hr>
+
+<h2>Navigation</h2>
+<ul>
+    <li><a href="{% url 'dashboard:seller_products' %}">My Products</a></li>
+    <li><a href="{% url 'dashboard:seller_orders' %}">My Orders</a></li>
+    <li><a href="{% url 'dashboard:seller_coupons' %}">My Coupons</a></li>
+    <li><a href="{% url 'dashboard:seller_subscription' %}">Subscription</a></li>
+    <li><a href="{% url 'dashboard:seller_settings' %}">Store Settings</a></li>
+    <li><a href="{% url 'dashboard:seller_delivery' %}">Delivery Zones</a></li>
+    <li><a href="{% url 'dashboard:seller_revenue' %}">Revenue</a></li>
+    <li><a href="{% url 'dashboard:seller_disputes' %}">Disputes</a></li>
+</ul>
+
+</body>
+</html>

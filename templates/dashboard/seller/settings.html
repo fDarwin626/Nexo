@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Store Settings — {{ seller.store_name }}</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <h2>Store Identity</h2>
+    <p>
+        <label>Store Description:</label><br>
+        <textarea name="store_description" rows="4" cols="50">{{ seller.store_description }}</textarea>
+    </p>
+    <p>
+        <label>WhatsApp Number (with country code eg 2348012345678):</label><br>
+        <input type="text" name="whatsapp_number" value="{{ seller.whatsapp_number }}">
+    </p>
+    <p>
+        <label>Store Logo (PNG only):</label><br>
+        {% if seller.logo %}
+            <p>Current: {{ seller.logo }}</p>
+        {% endif %}
+        <input type="file" name="logo" accept=".png">
+    </p>
+
+    <hr>
+
+    <h2>Banner</h2>
+    <p>
+        <label>Headline:</label><br>
+        <input type="text" name="banner_headline" value="{{ seller.banner_headline }}" maxlength="60">
+    </p>
+    <p>
+        <label>Subtext:</label><br>
+        <input type="text" name="banner_subtext" value="{{ seller.banner_subtext }}" maxlength="120">
+    </p>
+    <p>
+        <label>Background Color (hex):</label><br>
+        <input type="color" name="banner_bg_color" value="{{ seller.banner_bg_color }}">
+    </p>
+    <p>
+        <label>Accent Color (hex):</label><br>
+        <input type="color" name="banner_accent_color" value="{{ seller.banner_accent_color }}">
+    </p>
+
+    <hr>
+
+    <h2>Store Options</h2>
+    <p>
+        <label>
+            <input type="checkbox" name="allow_pod" {% if seller.allow_pod %}checked{% endif %}>
+            Allow Pay on Delivery
+        </label>
+    </p>
+    <p>
+        <label>
+            <input type="checkbox" name="is_on_vacation" {% if seller.is_on_vacation %}checked{% endif %}>
+            Vacation Mode (store visible but cart disabled)
+        </label>
+    </p>
+    <p>
+        <label>Vacation Return Date (optional):</label><br>
+        <input type="date" name="vacation_return_date"
+            value="{{ seller.vacation_return_date|default:'' }}">
+    </p>
+
+    <hr>
+
+    <button type="submit">Save Settings</button>
+</form>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Disputes</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+{% if disputes %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Order Ref</th>
+        <th>Buyer</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Opened</th>
+        <th>Actions</th>
+    </tr>
+    {% for dispute in disputes %}
+    <tr>
+        <td>{{ dispute.seller_order.order.order_ref }}</td>
+        <td>{{ dispute.buyer.full_name }}</td>
+        <td>{{ dispute.get_reason_display }}</td>
+        <td>{{ dispute.get_status_display }}</td>
+        <td>{{ dispute.created_at|date:"d M Y" }}</td>
+        <td>
+            <a href="{% url 'dashboard:seller_dispute_detail' dispute_id=dispute.pk %}">View</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No disputes.</p>
+{% endif %}
+
+</body>
+</html>

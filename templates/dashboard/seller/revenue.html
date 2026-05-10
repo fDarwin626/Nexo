@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Revenue & Transactions</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<h2>Summary</h2>
+<p>All-Time Revenue: ₦{{ total_revenue }}</p>
+<p>This Month Revenue: ₦{{ monthly_revenue }}</p>
+<p>Current Commission Rate: {{ commission_rate }}%</p>
+
+<hr>
+
+<h2>Completed Orders</h2>
+{% if completed_orders %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Order Ref</th>
+        <th>Subtotal</th>
+        <th>Commission</th>
+        <th>Your Payout</th>
+        <th>Date</th>
+    </tr>
+    {% for order in completed_orders %}
+    <tr>
+        <td>{{ order.order.order_ref }}</td>
+        <td>₦{{ order.subtotal }}</td>
+        <td>₦{{ order.commission_amount }} ({{ order.commission_rate }}%)</td>
+        <td>₦{{ order.seller_payout }}</td>
+        <td>{{ order.created_at|date:"d M Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No completed orders yet.</p>
+{% endif %}
+
+</body>
+</html>

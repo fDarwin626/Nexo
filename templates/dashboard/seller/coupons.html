@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>My Coupons</h1>
+<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+
+<hr>
+
+<a href="{% url 'dashboard:create_coupon' %}">+ Create New Coupon</a>
+
+<br><br>
+
+{% if coupons %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Code</th>
+        <th>Discount</th>
+        <th>Uses</th>
+        <th>Max Uses</th>
+        <th>Valid Until</th>
+        <th>Active</th>
+        <th>Actions</th>
+    </tr>
+    {% for coupon in coupons %}
+    <tr>
+        <td><strong>{{ coupon.code }}</strong></td>
+        <td>{{ coupon.discount_value }}%</td>
+        <td>{{ coupon.uses_count }}</td>
+        <td>{{ coupon.max_uses }}</td>
+        <td>{{ coupon.valid_until|date:"d M Y" }}</td>
+        <td>{% if coupon.is_active %}Yes{% else %}No{% endif %}</td>
+        <td>
+            {% if coupon.is_active %}
+            <form method="post" action="{% url 'dashboard:deactivate_coupon' coupon_id=coupon.pk %}">
+                {% csrf_token %}
+                <button type="submit">Deactivate</button>
+            </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No coupons yet.</p>
+{% endif %}
+
+</body>
+</html>

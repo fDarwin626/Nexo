@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Dispute — {{ dispute.seller_order.order.order_ref }}</h1>
+<a href="{% url 'dashboard:seller_disputes' %}">← Back to Disputes</a>
+
+<hr>
+
+<h2>Dispute Details</h2>
+<p>Reason: {{ dispute.get_reason_display }}</p>
+<p>Status: {{ dispute.get_status_display }}</p>
+<p>Opened: {{ dispute.created_at|date:"d M Y H:i" }}</p>
+<p>Buyer: {{ dispute.buyer.full_name }} ({{ dispute.buyer.email }})</p>
+
+<h3>Buyer Description</h3>
+<p>{{ dispute.description }}</p>
+
+<h3>Evidence</h3>
+{% if dispute.evidence_photo_1 %}
+    <p>Photo 1: {{ dispute.evidence_photo_1 }}</p>
+{% endif %}
+{% if dispute.evidence_photo_2 %}
+    <p>Photo 2: {{ dispute.evidence_photo_2 }}</p>
+{% endif %}
+{% if dispute.evidence_photo_3 %}
+    <p>Photo 3: {{ dispute.evidence_photo_3 }}</p>
+{% endif %}
+{% if dispute.evidence_video_url %}
+    <p>Video: <a href="{{ dispute.evidence_video_url }}">View Video</a></p>
+{% endif %}
+
+<hr>
+
+<h2>Message Thread</h2>
+{% if dispute_messages %}
+    {% for msg in dispute_messages %}
+    <div style="border:1px solid #ccc; padding:10px; margin:5px 0;">
+        <strong>{{ msg.sender_type|upper }}</strong> — {{ msg.created_at|date:"d M Y H:i" }}<br>
+        {{ msg.message }}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No messages yet. Admin will initiate contact.</p>
+{% endif %}
+
+<hr>
+
+<h2>Reply to Admin</h2>
+{% if dispute.status == 'closed' or dispute.status == 'resolved_refund' or dispute.status == 'resolved_kept' %}
+    <p>This dispute is closed. No further replies accepted.</p>
+{% else %}
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="message" rows="5" cols="50" placeholder="Your reply..." required></textarea><br><br>
+        <button type="submit">Send Reply</button>
+    </form>
+{% endif %}
+
+</body>
+</html>
