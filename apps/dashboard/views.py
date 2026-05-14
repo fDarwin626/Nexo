@@ -481,11 +481,285 @@ def seller_dispute_detail(request, dispute_id):
 
 
 # ─────────────────────────────────────────────────────────────
-# ADMIN DASHBOARD (placeholder — Section 9)
+# ADMIN DASHBOARD — SECTION 9
 # ─────────────────────────────────────────────────────────────
 
-@login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.mail import send_mail
+from django.conf import settings as django_settings
+
+from apps.accounts.models import User, BanRecord
+from apps.payments.models import PaymentLog, ReserveFund
+from apps.core.models import ExchangeRate, SiteSettings, Coupon
+
+
+@staff_member_required(login_url='/auth/login/')
 def admin_dashboard(request):
-    if not request.user.is_staff:
-        return redirect('/')
-    return render(request, 'dashboard/admin/home.html')
+    # Platform GMV — all confirmed payments
+    gmv = PaymentLog.objects.filter(
+        status='success',
+        payment_type='purchase'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Sellers
+    active_sellers = SellerProfile.objects.filter(
+        status='active', is_approved=True
+    ).count()
+
+    pending_sellers = SellerProfile.objects.filter(
+        status='pending', is_approved=False
+    ).order_by('-created_at')
+
+    # Disputes
+    escalated_disputes = Dispute.objects.filter(
+        status='escalated'
+    ).select_related(
+        'seller_order__order', 'buyer', 'seller'
+    ).order_by('-created_at')
+
+    # Reserve fund
+    reserve_fund = ReserveFund.objects.first()
+
+    # Recent payment logs
+    recent_payments = PaymentLog.objects.select_related(
+        'buyer', 'order'
+    ).order_by('-created_at')[:20]
+
+    # Fraud — users with high fraud score
+    fraud_users = User.objects.filter(
+        fraud_score__gte=3
+    ).order_by('-fraud_score')[:20]
+
+    # Ban records
+    recent_bans = BanRecord.objects.select_related(
+        'original_account'
+    ).order_by('-created_at')[:20]
+
+    # Exchange rate
+    current_rate = ExchangeRate.objects.filter(
+        is_active=True
+    ).first()
+
+    # Platform coupons
+    platform_coupons = Coupon.objects.filter(
+        seller__isnull=True
+    ).order_by('-created_at')
+
+    # Top selling products
+    from apps.orders.models import OrderItem
+    from django.db.models import Sum as DSum
+    top_products = OrderItem.objects.values(
+        'product_name'
+    ).annotate(
+        total_sold=DSum('quantity')
+    ).order_by('-total_sold')[:10]
+
+    # Site settings
+    site_settings = SiteSettings.get_settings()
+
+    return render(request, 'dashboard/admin/home.html', {
+        'gmv': gmv,
+        'active_sellers': active_sellers,
+        'pending_sellers': pending_sellers,
+        'escalated_disputes': escalated_disputes,
+        'reserve_fund': reserve_fund,
+        'recent_payments': recent_payments,
+        'fraud_users': fraud_users,
+        'recent_bans': recent_bans,
+        'current_rate': current_rate,
+        'platform_coupons': platform_coupons,
+        'top_products': top_products,
+        'site_settings': site_settings,
+    })
+
+
+@staff_member_required(login_url='/auth/login/')
+def approve_seller(request, seller_id):
+    seller = get_object_or_404(SellerProfile, pk=seller_id)
+
+    if request.method == 'POST':
+        seller.is_approved = True
+        seller.status = SellerProfile.StoreStatus.ACTIVE
+        seller.approved_by = request.user
+        seller.approved_at = timezone.now()
+        seller.save(update_fields=[
+            'is_approved', 'status', 'approved_by', 'approved_at'
+        ])
+
+        # Update user role to seller
+        seller.user.role = 'seller'
+        seller.user.save(update_fields=['role'])
+
+        # Send approval email
+        _send_seller_approval_email(seller)
+
+        messages.success(
+            request,
+            f'{seller.store_name} has been approved and is now live.'
+        )
+
+    return redirect('dashboard:admin')
+
+
+@staff_member_required(login_url='/auth/login/')
+def reject_seller(request, seller_id):
+    seller = get_object_or_404(SellerProfile, pk=seller_id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        if not reason:
+            messages.error(request, 'Please provide a rejection reason.')
+            return redirect('dashboard:admin')
+
+        seller.rejection_reason = reason
+        seller.status = SellerProfile.StoreStatus.PENDING
+        seller.save(update_fields=['rejection_reason', 'status'])
+
+        # Send rejection email
+        _send_seller_rejection_email(seller, reason)
+
+        messages.success(
+            request,
+            f'{seller.store_name} application rejected. Seller notified.'
+        )
+
+    return redirect('dashboard:admin')
+
+
+@staff_member_required(login_url='/auth/login/')
+def set_exchange_rate(request):
+    if request.method == 'POST':
+        rate = request.POST.get('usd_to_ngn', '').strip()
+        try:
+            rate = float(rate)
+            if rate <= 0:
+                raise ValueError
+        except ValueError:
+            messages.error(request, 'Invalid exchange rate.')
+            return redirect('dashboard:admin')
+
+        ExchangeRate.objects.create(
+            usd_to_ngn=rate,
+            is_active=True,
+            set_by=request.user,
+        )
+        messages.success(request, f'Exchange rate updated: $1 = ₦{rate}')
+
+    return redirect('dashboard:admin')
+
+
+@staff_member_required(login_url='/auth/login/')
+def create_platform_coupon(request):
+    if request.method == 'POST':
+        discount_value = request.POST.get('discount_value')
+        max_uses = request.POST.get('max_uses', 100)
+        valid_from = request.POST.get('valid_from')
+        valid_until = request.POST.get('valid_until')
+        budget_cap = request.POST.get('budget_cap') or None
+
+        try:
+            discount_value = float(discount_value)
+            if not 5 <= discount_value <= 50:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, 'Discount must be between 5% and 50%.')
+            return redirect('dashboard:admin')
+
+        Coupon.objects.create(
+            seller=None,
+            created_by=request.user,
+            discount_type='percentage',
+            discount_value=discount_value,
+            max_uses=max_uses,
+            valid_from=valid_from,
+            valid_until=valid_until,
+            budget_cap=budget_cap,
+            is_active=True,
+        )
+        messages.success(request, 'Platform coupon created.')
+
+    return redirect('dashboard:admin')
+
+
+@staff_member_required(login_url='/auth/login/')
+def ban_user(request, user_id):
+    target_user = get_object_or_404(User, pk=user_id)
+
+    if request.method == 'POST':
+        ban_type = request.POST.get('ban_type', 'hard')
+        reason = request.POST.get('reason', '').strip()
+
+        if not reason:
+            messages.error(request, 'Ban reason is required.')
+            return redirect('dashboard:admin')
+
+        target_user.ban_status = ban_type
+        target_user.ban_reason = reason
+        target_user.banned_at = timezone.now()
+        target_user.save(update_fields=['ban_status', 'ban_reason', 'banned_at'])
+
+        BanRecord.objects.create(
+            original_account=target_user,
+            device_fingerprint=target_user.device_fingerprint or '',
+            ban_type=ban_type,
+            ban_reason=reason,
+        )
+
+        messages.success(request, f'{target_user.email} has been banned ({ban_type}).')
+
+    return redirect('dashboard:admin')
+
+
+@staff_member_required(login_url='/auth/login/')
+def suspend_seller(request, seller_id):
+    seller = get_object_or_404(SellerProfile, pk=seller_id)
+
+    if request.method == 'POST':
+        seller.status = SellerProfile.StoreStatus.SUSPENDED
+        seller.save(update_fields=['status'])
+
+        # Hide all products
+        seller.products.update(is_active=False)
+
+        messages.success(
+            request,
+            f'{seller.store_name} has been suspended. All products hidden.'
+        )
+
+    return redirect('dashboard:admin')
+
+
+# ── EMAIL HELPERS ─────────────────────────────────────────────
+
+def _send_seller_approval_email(seller):
+    send_mail(
+        subject='Your Nexo store has been approved!',
+        message=(
+            f'Hi {seller.user.get_short_name()},\n\n'
+            f'Great news! Your store "{seller.store_name}" has been approved '
+            f'and is now live on Nexo.\n\n'
+            f'Start adding products at:\n'
+            f'{django_settings.FRONTEND_URL}/products/add/\n\n'
+            f'The Nexo Team'
+        ),
+        from_email=django_settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[seller.user.email],
+        fail_silently=True,
+    )
+
+
+def _send_seller_rejection_email(seller, reason):
+    send_mail(
+        subject='Update on your Nexo seller application',
+        message=(
+            f'Hi {seller.user.get_short_name()},\n\n'
+            f'Unfortunately your store application for "{seller.store_name}" '
+            f'was not approved at this time.\n\n'
+            f'Reason: {reason}\n\n'
+            f'You may reapply after addressing the issue above.\n\n'
+            f'The Nexo Team'
+        ),
+        from_email=django_settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[seller.user.email],
+        fail_silently=True,
+    )

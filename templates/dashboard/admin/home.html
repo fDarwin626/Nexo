@@ -1,7 +1,258 @@
 <!DOCTYPE html>
 <html>
 <body>
-<h1>Admin Dashboard — Coming in Section 9</h1>
-<a href="/admin/">Go to Django Admin Panel</a>
+
+<h1>Admin Super Dashboard</h1>
+<a href="{% url 'dashboard:seller' %}" style="display:none"></a>
+
+<hr>
+
+<h2>Platform Overview</h2>
+<p>Total GMV: ₦{{ gmv }}</p>
+<p>Active Sellers: {{ active_sellers }}</p>
+{% if reserve_fund %}
+<p>Reserve Fund Balance: ₦{{ reserve_fund.balance }}</p>
+{% else %}
+<p>Reserve Fund: Not initialised yet</p>
+{% endif %}
+
+<hr>
+
+<h2>Exchange Rate</h2>
+{% if current_rate %}
+    <p>Current Rate: $1 = ₦{{ current_rate.usd_to_ngn }}</p>
+    <p>Set by: {{ current_rate.set_by.email }} on {{ current_rate.created_at|date:"d M Y" }}</p>
+{% else %}
+    <p style="color:red;">No exchange rate set.</p>
+{% endif %}
+
+<form method="post" action="{% url 'dashboard:set_exchange_rate' %}">
+    {% csrf_token %}
+    <input type="number" name="usd_to_ngn" placeholder="eg 1650" step="0.01" required>
+    <button type="submit">Update Rate</button>
+</form>
+
+<hr>
+
+<h2>Pending Seller Approvals ({{ pending_sellers|length }})</h2>
+{% if pending_sellers %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Store Name</th>
+        <th>Owner</th>
+        <th>Account Type</th>
+        <th>Applied</th>
+        <th>Actions</th>
+    </tr>
+    {% for seller in pending_sellers %}
+    <tr>
+        <td>{{ seller.store_name }}</td>
+        <td>{{ seller.user.email }}</td>
+        <td>{{ seller.get_account_type_display }}</td>
+        <td>{{ seller.created_at|date:"d M Y" }}</td>
+        <td>
+            <form method="post" action="{% url 'dashboard:approve_seller' seller_id=seller.pk %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit">Approve</button>
+            </form>
+            &nbsp;
+            <form method="post" action="{% url 'dashboard:reject_seller' seller_id=seller.pk %}" style="display:inline">
+                {% csrf_token %}
+                <input type="text" name="reason" placeholder="Rejection reason" required>
+                <button type="submit" style="color:red;">Reject</button>
+            </form>
+            &nbsp;
+            <form method="post" action="{% url 'dashboard:suspend_seller' seller_id=seller.pk %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" style="color:orange;">Suspend</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No pending applications.</p>
+{% endif %}
+
+<hr>
+
+<h2>Escalated Disputes ({{ escalated_disputes|length }})</h2>
+{% if escalated_disputes %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Order Ref</th>
+        <th>Buyer</th>
+        <th>Seller</th>
+        <th>Reason</th>
+        <th>Opened</th>
+    </tr>
+    {% for dispute in escalated_disputes %}
+    <tr>
+        <td>{{ dispute.seller_order.order.order_ref }}</td>
+        <td>{{ dispute.buyer.email }}</td>
+        <td>{{ dispute.seller.store_name }}</td>
+        <td>{{ dispute.get_reason_display }}</td>
+        <td>{{ dispute.created_at|date:"d M Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No escalated disputes.</p>
+{% endif %}
+
+<hr>
+
+<h2>Top Selling Products</h2>
+{% if top_products %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Product</th>
+        <th>Total Sold</th>
+    </tr>
+    {% for product in top_products %}
+    <tr>
+        <td>{{ product.product_name }}</td>
+        <td>{{ product.total_sold }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No sales data yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Recent Payments</h2>
+{% if recent_payments %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Reference</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Buyer</th>
+        <th>Date</th>
+    </tr>
+    {% for log in recent_payments %}
+    <tr>
+        <td>{{ log.fw_reference }}</td>
+        <td>{{ log.get_payment_type_display }}</td>
+        <td>₦{{ log.amount }}</td>
+        <td>{{ log.get_status_display }}</td>
+        <td>{{ log.buyer.email|default:"Guest" }}</td>
+        <td>{{ log.created_at|date:"d M Y H:i" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No payment logs yet.</p>
+{% endif %}
+
+<hr>
+
+<h2>Fraud Watch — High Fraud Score Users</h2>
+{% if fraud_users %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Email</th>
+        <th>Fraud Score</th>
+        <th>Ban Status</th>
+        <th>Actions</th>
+    </tr>
+    {% for u in fraud_users %}
+    <tr>
+        <td>{{ u.email }}</td>
+        <td>{{ u.fraud_score }}</td>
+        <td>{{ u.ban_status }}</td>
+        <td>
+            {% if u.ban_status == 'none' %}
+            <form method="post" action="{% url 'dashboard:ban_user' user_id=u.pk %}">
+                {% csrf_token %}
+                <select name="ban_type">
+                    <option value="shadow">Shadow Ban</option>
+                    <option value="hard">Hard Ban</option>
+                    <option value="permanent">Permanent Ban</option>
+                </select>
+                <input type="text" name="reason" placeholder="Reason" required>
+                <button type="submit">Ban</button>
+            </form>
+            {% else %}
+                Already banned ({{ u.ban_status }})
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No flagged users.</p>
+{% endif %}
+
+<hr>
+
+<h2>Recent Ban Records</h2>
+{% if recent_bans %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Account</th>
+        <th>Ban Type</th>
+        <th>Reason</th>
+        <th>Date</th>
+    </tr>
+    {% for ban in recent_bans %}
+    <tr>
+        <td>{{ ban.original_account.email|default:"Deleted" }}</td>
+        <td>{{ ban.ban_type }}</td>
+        <td>{{ ban.ban_reason }}</td>
+        <td>{{ ban.created_at|date:"d M Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No ban records.</p>
+{% endif %}
+
+<hr>
+
+<h2>Platform Coupons</h2>
+<form method="post" action="{% url 'dashboard:create_platform_coupon' %}">
+    {% csrf_token %}
+    <input type="number" name="discount_value" placeholder="Discount % (5-50)" min="5" max="50" required>
+    <input type="number" name="max_uses" placeholder="Max uses" value="100">
+    <input type="number" name="budget_cap" placeholder="Budget cap ₦ (optional)">
+    <input type="datetime-local" name="valid_from" required>
+    <input type="datetime-local" name="valid_until" required>
+    <button type="submit">Create Platform Coupon</button>
+</form>
+
+<br>
+
+{% if platform_coupons %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Code</th>
+        <th>Discount</th>
+        <th>Uses</th>
+        <th>Budget Cap</th>
+        <th>Valid Until</th>
+        <th>Active</th>
+    </tr>
+    {% for coupon in platform_coupons %}
+    <tr>
+        <td>{{ coupon.code }}</td>
+        <td>{{ coupon.discount_value }}%</td>
+        <td>{{ coupon.uses_count }}/{{ coupon.max_uses }}</td>
+        <td>{% if coupon.budget_cap %}₦{{ coupon.budget_cap }}{% else %}—{% endif %}</td>
+        <td>{{ coupon.valid_until|date:"d M Y" }}</td>
+        <td>{% if coupon.is_active %}Yes{% else %}No{% endif %}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No platform coupons yet.</p>
+{% endif %}
+
+<hr>
+<a href="/admin/">Django Admin Panel</a>
+
 </body>
 </html>

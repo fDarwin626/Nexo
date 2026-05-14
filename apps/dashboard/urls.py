@@ -24,4 +24,10 @@ urlpatterns = [
 
     # Admin Dashboard
     path('admin/', views.admin_dashboard, name='admin'),
+    path('admin/sellers/<int:seller_id>/approve/', views.approve_seller, name='approve_seller'),
+    path('admin/sellers/<int:seller_id>/reject/', views.reject_seller, name='reject_seller'),
+    path('admin/sellers/<int:seller_id>/suspend/', views.suspend_seller, name='suspend_seller'),
+    path('admin/exchange-rate/', views.set_exchange_rate, name='set_exchange_rate'),
+    path('admin/coupons/create/', views.create_platform_coupon, name='create_platform_coupon'),
+    path('admin/users/<int:user_id>/ban/', views.ban_user, name='ban_user'),
 ]
