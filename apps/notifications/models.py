@@ -170,13 +170,7 @@ class EmailLog(models.Model):
         max_length=30,
         help_text='Type of email — matches notification type'
     )
-    status = models.EmailStatus if hasattr(
-        models, 'EmailStatus'
-    ) else models.CharField(
-        max_length=10,
-        choices=EmailStatus.choices,
-        default=EmailStatus.PENDING
-    )
+
     status = models.CharField(
         max_length=10,
         choices=EmailStatus.choices,

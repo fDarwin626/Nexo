@@ -7,9 +7,10 @@
     <p>Delivery: {{ order.delivery_type }} — {{ order.delivery_state }}</p>
 
     {% for seller_order in seller_orders %}
-    <div>
+    <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
         <h3>{{ seller_order.seller.store_name }}</h3>
-        <p>Status: {{ seller_order.status }}</p>
+        <p>Status: {{ seller_order.get_status_display }}</p>
+
         {% for item in seller_order.items.all %}
         <div>
             {{ item.product_name }}
@@ -17,6 +18,24 @@
             x{{ item.quantity }} — ₦{{ item.line_total }}
         </div>
         {% endfor %}
+
+        <br>
+
+        {% if seller_order.tracking_number %}
+            <p>Tracking: {{ seller_order.tracking_number }}</p>
+        {% endif %}
+
+        {% if seller_order.status == 'delivered' or seller_order.status == 'delivered_paid' or seller_order.status == 'shipped' %}
+            {% if not seller_order.dispute %}
+                <a href="{% url 'disputes:open' seller_order_id=seller_order.pk %}">
+                    <button>Open Dispute</button>
+                </a>
+            {% else %}
+                <a href="{% url 'disputes:detail' dispute_id=seller_order.dispute.pk %}">
+                    View Dispute ({{ seller_order.dispute.get_status_display }})
+                </a>
+            {% endif %}
+        {% endif %}
     </div>
     {% endfor %}
 

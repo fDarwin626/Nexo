@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Manage Dispute — {{ dispute.seller_order.order.order_ref }}</h1>
+<a href="{% url 'disputes:admin_list' %}">← All Disputes</a>
+
+<hr>
+
+<h2>Dispute Info</h2>
+<p>Buyer: {{ dispute.buyer.full_name }} ({{ dispute.buyer.email }})</p>
+<p>Seller: {{ dispute.seller.store_name }}</p>
+<p>Reason: {{ dispute.get_reason_display }}</p>
+<p>Status: {{ dispute.get_status_display }}</p>
+<p>Opened: {{ dispute.created_at|date:"d M Y H:i" }}</p>
+<p>Overdue: {% if dispute.is_overdue %}YES — seller missed 48hr window{% else %}No{% endif %}</p>
+
+<h3>Buyer Description</h3>
+<p>{{ dispute.description }}</p>
+
+<h3>Evidence</h3>
+{% if dispute.evidence_photo_1 %}<p>Photo 1: {{ dispute.evidence_photo_1 }}</p>{% endif %}
+{% if dispute.evidence_photo_2 %}<p>Photo 2: {{ dispute.evidence_photo_2 }}</p>{% endif %}
+{% if dispute.evidence_photo_3 %}<p>Photo 3: {{ dispute.evidence_photo_3 }}</p>{% endif %}
+{% if dispute.evidence_video_url %}
+    <p>Video: <a href="{{ dispute.evidence_video_url }}" target="_blank">View</a></p>
+{% endif %}
+
+{% if dispute.seller_response %}
+<h3>Seller Response</h3>
+<p>{{ dispute.seller_response }}</p>
+{% endif %}
+
+<hr>
+
+<h2>Message Thread (Admin ↔ Seller)</h2>
+{% if dispute_messages %}
+    {% for msg in dispute_messages %}
+    <div style="border:1px solid #999; padding:8px; margin:5px 0;">
+        <strong>{{ msg.sender_type|upper }}</strong>
+        — {{ msg.created_at|date:"d M Y H:i" }}<br>
+        {{ msg.message }}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No messages yet. Send first message below to initiate thread.</p>
+{% endif %}
+
+<h3>Send Message to Seller</h3>
+<form method="post" action="{% url 'disputes:admin_message' dispute_id=dispute.pk %}">
+    {% csrf_token %}
+    <textarea name="message" rows="4" cols="60" placeholder="Message to seller..." required></textarea><br>
+    <button type="submit">Send Message</button>
+</form>
+
+<hr>
+
+<h2>Resolve Dispute</h2>
+{% if dispute.status not in 'closed,resolved_refund,resolved_kept,resolved_replace' %}
+<form method="post" action="{% url 'disputes:admin_resolve' dispute_id=dispute.pk %}">
+    {% csrf_token %}
+
+    <p>
+        <label>Resolution:</label><br>
+        <select name="resolution" required>
+            <option value="">-- Select --</option>
+            <option value="resolved_refund">Refund Issued</option>
+            <option value="resolved_kept">Buyer Keeps Item</option>
+            <option value="resolved_replace">Replacement Sent</option>
+            <option value="closed">Close Dispute</option>
+        </select>
+    </p>
+
+    <p>
+        <label>Admin Decision (shown to both parties):</label><br>
+        <textarea name="admin_decision" rows="4" cols="60" required></textarea>
+    </p>
+
+    <p>
+        <label>Compensation Amount ₦ (optional):</label><br>
+        <input type="number" name="compensation_amount" min="0" step="0.01">
+    </p>
+
+    <p>
+        <label>Compensation Source:</label><br>
+        <select name="compensation_source">
+            <option value="">Not Applicable</option>
+            <option value="seller">From Seller Payout</option>
+            <option value="reserve_fund">From Reserve Fund</option>
+            <option value="both">Split (50/50)</option>
+        </select>
+    </p>
+
+    <button type="submit">Resolve Dispute</button>
+</form>
+{% else %}
+    <p>This dispute is already resolved ({{ dispute.get_status_display }}).</p>
+    {% if dispute.admin_decision %}
+        <p>Decision: {{ dispute.admin_decision }}</p>
+    {% endif %}
+    {% if dispute.compensation_amount %}
+        <p>Compensation: ₦{{ dispute.compensation_amount }} from {{ dispute.compensation_source }}</p>
+    {% endif %}
+{% endif %}
+
+<hr>
+
+<h2>Issue Strike to Seller</h2>
+<p>Current Strike Count: {{ dispute.seller.strike_count }}</p>
+{% if strikes %}
+    <p>Strikes on this dispute:</p>
+    {% for strike in strikes %}
+        <p>— {{ strike.get_level_display }}: {{ strike.reason }}</p>
+    {% endfor %}
+{% endif %}
+
+<form method="post" action="{% url 'disputes:admin_strike' dispute_id=dispute.pk %}">
+    {% csrf_token %}
+    <p>
+        <label>Strike Level:</label><br>
+        <select name="level" required>
+            <option value="">-- Select --</option>
+            {% for value, label in strike_level_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <p>
+        <label>Reason:</label><br>
+        <textarea name="reason" rows="3" cols="60" required></textarea>
+    </p>
+    <p>
+        <label>Action Taken:</label><br>
+        <input type="text" name="action_taken" cols="60"
+            placeholder="eg Store suspended, ₦50,000 deducted from payout">
+    </p>
+    <button type="submit" style="color:red;">Issue Strike</button>
+</form>
+
+</body>
+</html>

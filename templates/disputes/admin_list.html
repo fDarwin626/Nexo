@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>All Disputes</h1>
+<a href="{% url 'dashboard:admin' %}">← Admin Dashboard</a>
+
+<hr>
+
+<form method="get">
+    <select name="status">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+            {{ label }}
+        </option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+<hr>
+
+{% if disputes %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>Order Ref</th>
+        <th>Buyer</th>
+        <th>Seller</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Opened</th>
+        <th>Overdue</th>
+        <th>Actions</th>
+    </tr>
+    {% for dispute in disputes %}
+    <tr>
+        <td>{{ dispute.seller_order.order.order_ref }}</td>
+        <td>{{ dispute.buyer.email }}</td>
+        <td>{{ dispute.seller.store_name }}</td>
+        <td>{{ dispute.get_reason_display }}</td>
+        <td>{{ dispute.get_status_display }}</td>
+        <td>{{ dispute.created_at|date:"d M Y" }}</td>
+        <td>{% if dispute.is_overdue %}YES{% else %}No{% endif %}</td>
+        <td>
+            <a href="{% url 'disputes:admin_detail' dispute_id=dispute.pk %}">Manage</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>No disputes found.</p>
+{% endif %}
+
+</body>
+</html>

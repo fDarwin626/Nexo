@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><title>Notifications</title></head>
+<body>
+  <h1>Notifications ({{ notifications|length }})</h1>
+
+  <form method="post" action="{% url 'notifications:mark_all_read' %}">
+    {% csrf_token %}
+    <button type="submit">Mark all read</button>
+  </form>
+
+  <hr>
+
+  {% for n in notifications %}
+    <div style="padding:10px; margin:5px 0; background:{% if not n.is_read %}#fffbe6{% else %}#f5f5f5{% endif %}">
+      <strong>{{ n.title }}</strong>
+      {% if not n.is_read %}<span style="color:red"> ● UNREAD</span>{% endif %}
+      <br>
+      {{ n.message }}
+      <br>
+      <small>{{ n.created_at }}</small>
+      {% if n.link %}
+        <br>
+        <a href="{% url 'notifications:mark_read' n.pk %}">View →</a>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p>No notifications yet.</p>
+  {% endfor %}
+
+</body>
+</html>

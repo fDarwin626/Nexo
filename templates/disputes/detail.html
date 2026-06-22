@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Dispute — {{ dispute.seller_order.order.order_ref }}</h1>
+<a href="{% url 'disputes:my_disputes' %}">← My Disputes</a>
+
+<hr>
+
+<h2>Details</h2>
+<p>Seller: {{ dispute.seller.store_name }}</p>
+<p>Reason: {{ dispute.get_reason_display }}</p>
+<p>Status: {{ dispute.get_status_display }}</p>
+<p>Opened: {{ dispute.created_at|date:"d M Y H:i" }}</p>
+{% if dispute.seller_response_deadline %}
+<p>Seller Response Deadline: {{ dispute.seller_response_deadline|date:"d M Y H:i" }}</p>
+{% endif %}
+
+<h3>Your Description</h3>
+<p>{{ dispute.description }}</p>
+
+<h3>Evidence</h3>
+{% if dispute.evidence_photo_1 %}
+    <p>Photo 1 uploaded</p>
+{% endif %}
+{% if dispute.evidence_photo_2 %}
+    <p>Photo 2 uploaded</p>
+{% endif %}
+{% if dispute.evidence_photo_3 %}
+    <p>Photo 3 uploaded</p>
+{% endif %}
+{% if dispute.evidence_video_url %}
+    <p>Video: <a href="{{ dispute.evidence_video_url }}" target="_blank">View</a></p>
+{% endif %}
+
+<hr>
+
+{% if dispute.seller_response %}
+<h2>Seller Response</h2>
+<p>{{ dispute.seller_response }}</p>
+<p><small>Responded: {{ dispute.seller_responded_at|date:"d M Y H:i" }}</small></p>
+<hr>
+{% endif %}
+
+{% if dispute.admin_decision %}
+<h2>Admin Decision</h2>
+<p>{{ dispute.admin_decision }}</p>
+{% if dispute.compensation_amount %}
+<p>Compensation: ₦{{ dispute.compensation_amount }}</p>
+{% endif %}
+<hr>
+{% endif %}
+
+<h2>Message Thread</h2>
+{% if dispute_messages %}
+    {% for msg in dispute_messages %}
+    <div style="border:1px solid #ccc; padding:8px; margin:5px 0;">
+        <strong>{{ msg.sender_type|upper }}</strong>
+        — {{ msg.created_at|date:"d M Y H:i" }}<br>
+        {{ msg.message }}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No messages yet.</p>
+{% endif %}
+
+</body>
+</html>
