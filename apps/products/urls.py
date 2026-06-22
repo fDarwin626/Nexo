@@ -15,6 +15,10 @@ urlpatterns = [
     # Public product detail page
     path('<slug:product_slug>/', views.product_detail, name='detail'),
 
+    # Reviews
+    path('review/<int:order_item_id>/', views.create_review, name='create_review'),
+    path('review/<int:review_id>/reply/', views.seller_reply_review, name='seller_reply_review'),
+
     # AJAX
     path('api/category/<int:category_id>/variants/',
          views.get_category_variants, name='category_variants'),

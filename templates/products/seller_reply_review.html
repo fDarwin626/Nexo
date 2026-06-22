@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Reply to Review</title></head>
+<body>
+  <h1>Reply to Review</h1>
+
+  <div style="background:#f5f5f5; padding:10px; margin-bottom:20px;">
+    <strong>{{ review.buyer.get_short_name }}</strong> — {{ review.rating }}★<br>
+    {{ review.comment }}
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <label>Your reply:</label><br>
+    <textarea name="reply" rows="4" cols="50" required></textarea><br><br>
+    <small>Note: You can only reply once and cannot edit after submitting.</small><br><br>
+    <button type="submit">Post Reply</button>
+  </form>
+</body>
+</html>

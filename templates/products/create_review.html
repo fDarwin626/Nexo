@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Write a Review</title></head>
+<body>
+  <h1>Review: {{ order_item.product_name }}</h1>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Rating (1–5):</label><br>
+    <select name="rating" required>
+      <option value="">Select rating</option>
+      <option value="5">5 ★★★★★ Excellent</option>
+      <option value="4">4 ★★★★ Good</option>
+      <option value="3">3 ★★★ Average</option>
+      <option value="2">2 ★★ Poor</option>
+      <option value="1">1 ★ Terrible</option>
+    </select><br><br>
+
+    <label>Comment:</label><br>
+    <textarea name="comment" rows="5" cols="50" required></textarea><br><br>
+
+    <label>Photo (optional):</label><br>
+    <input type="file" name="photo" accept="image/*"><br><br>
+
+    <button type="submit">Submit Review</button>
+  </form>
+</body>
+</html>

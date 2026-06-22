@@ -415,3 +415,174 @@ def restock_product(request, product_id):
             messages.error(request, 'SKU not found.')
 
     return redirect('dashboard:seller')
+
+# ─────────────────────────────────────────────────────────────
+#                 REVIEWS
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def create_review(request, order_item_id):
+    """
+    Buyer creates a review for a delivered order item.
+    Gates:
+    - Must be logged in
+    - OrderItem must belong to this buyer
+    - Order must be DELIVERED or COMPLETED
+    - No review already exists for this order item
+    """
+    from apps.orders.models import OrderItem
+    from .models import Review
+
+    order_item = get_object_or_404(
+        OrderItem,
+        pk=order_item_id,
+        seller_order__order__buyer=request.user,
+    )
+
+    # Gate 1 — order must be delivered
+    deliverable_statuses = ['delivered', 'delivered_paid', 'completed']
+    if order_item.seller_order.status not in deliverable_statuses:
+        messages.error(
+            request,
+            'You can only review items from delivered orders.'
+        )
+        return redirect('orders:order_detail',
+                        order_ref=order_item.seller_order.order.order_ref)
+
+    # Gate 2 — no existing review
+    if hasattr(order_item, 'review'):
+        messages.info(request, 'You have already reviewed this item.')
+        return redirect('products:detail',
+                        product_slug=order_item.seller_order.order.order_ref)
+
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment', '').strip()
+        photo = request.FILES.get('photo')
+
+        # Validate rating
+        try:
+            rating = int(rating)
+            if not 1 <= rating <= 5:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, 'Rating must be between 1 and 5.')
+            return redirect('products:create_review',
+                            order_item_id=order_item_id)
+
+        if not comment:
+            messages.error(request, 'Please write a comment.')
+            return redirect('products:create_review',
+                            order_item_id=order_item_id)
+
+        with transaction.atomic():
+            product = _get_product_from_order_item(order_item)
+            if not product:
+                messages.error(
+                    request,
+                    'This product no longer exists and cannot be reviewed.'
+                )
+                return redirect('orders:order_list')
+
+            review = Review.objects.create(
+                product=product,
+                buyer=request.user,
+                order_item=order_item,
+                rating=rating,
+                comment=comment,
+                photo=photo,
+            )
+
+            # Update product rating_avg and rating_count
+            _update_product_rating(review.product)
+
+            # Notify seller
+            from apps.notifications.models import Notification
+            Notification.objects.create(
+                recipient=order_item.seller_order.seller.user,
+                notification_type='new_review',
+                title=f'New {rating}★ review on your product',
+                message=(
+                    f'{request.user.get_short_name()} left a {rating}-star '
+                    f'review on "{review.product.name}".'
+                ),
+                link=f'/products/{review.product.slug}/',
+                related_object_id=review.product.pk,
+                related_object_type='product',
+            )
+
+        messages.success(request, 'Review submitted. Thank you!')
+        return redirect('products:detail',
+                        product_slug=review.product.slug)
+
+    return render(request, 'products/create_review.html', {
+        'order_item': order_item,
+    })
+
+
+@login_required
+def seller_reply_review(request, review_id):
+    """
+    Seller replies to a review on their product.
+    One reply only — cannot edit after submitting.
+    """
+    from .models import Review
+
+    review = get_object_or_404(Review, pk=review_id)
+    seller = _get_seller_profile(request.user)
+
+    # Gate — must be the seller who owns the product
+    if not seller or review.product.seller != seller:
+        messages.error(request, 'You cannot reply to this review.')
+        return redirect('products:detail',
+                        product_slug=review.product.slug)
+
+    # Gate — cannot reply twice
+    if review.seller_reply:
+        messages.info(request, 'You have already replied to this review.')
+        return redirect('products:detail',
+                        product_slug=review.product.slug)
+
+    if request.method == 'POST':
+        reply = request.POST.get('reply', '').strip()
+
+        if not reply:
+            messages.error(request, 'Reply cannot be empty.')
+            return redirect('products:seller_reply_review',
+                            review_id=review_id)
+
+        review.seller_reply = reply
+        review.replied_at = timezone.now()
+        review.save(update_fields=['seller_reply', 'replied_at'])
+
+        messages.success(request, 'Reply posted.')
+        return redirect('products:detail',
+                        product_slug=review.product.slug)
+
+    return render(request, 'products/seller_reply_review.html', {
+        'review': review,
+    })
+
+
+# ── REVIEW HELPERS ────────────────────────────────────────────
+
+def _get_product_from_order_item(order_item):
+    """Gets the Product from an OrderItem via its SKU"""
+    try:
+        return order_item.sku.product
+    except Exception:
+        return None
+
+
+def _update_product_rating(product):
+    """Recalculates and saves product rating_avg and rating_count"""
+    from django.db.models import Avg, Count
+    if not product:
+        return
+    result = product.reviews.aggregate(
+        avg=Avg('rating'),
+        count=Count('id')
+    )
+    product.rating_avg = result['avg'] or 0
+    product.rating_count = result['count'] or 0
+    product.save(update_fields=['rating_avg', 'rating_count'])
