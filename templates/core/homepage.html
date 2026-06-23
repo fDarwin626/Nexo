@@ -2,7 +2,7 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Nexo — Nigerian Marketplace{% endblock %}
+{% block title %}Nexo Nigerian Marketplace{% endblock %}
 {% block meta_description %}Buy and sell anything in Nigeria. Thousands of verified sellers, one marketplace.{% endblock %}
 
 {% block extra_head %}
@@ -16,7 +16,18 @@
   overflow: hidden;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  margin-top: -64px;
+  padding-top: 64px;
 }
+.hero-coupon-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
 .hero-bg {
   position: absolute;
   inset: 0;
@@ -85,7 +96,6 @@
   gap: 32px;
   margin-top: 48px;
   padding-top: 32px;
-  border-top: 1px solid var(--border);
 }
 .hero-stat-num {
   font-family: 'Clash Display', sans-serif;
@@ -267,7 +277,8 @@
 }
 .product-card-img {
   width: 100%;
-  aspect-ratio: 1;
+  height: 220px;
+  overflow: hidden;
   object-fit: cover;
   background: var(--surface-alt);
   display: flex;
@@ -307,6 +318,7 @@
   margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+   min-height: 36px; /* reserves 2-line height even for short names */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -384,16 +396,182 @@
 .section { padding: 60px 0; }
 .section + .section { padding-top: 0; }
 
-/* ── MOBILE ── */
+/* ─────────────────────────────────────────
+   ── MOBILE LAYOUT (max-width: 768px) ──
+   Desktop styles above are NOT touched.
+   Everything below is mobile-only.
+───────────────────────────────────────── */
 @media (max-width: 768px) {
-  .hero-inner { grid-template-columns: 1fr; gap: 32px; padding: 40px 16px; }
+
+  /* ── HERO ──
+     Image becomes a tall banner at top.
+     Text content sits cleanly below it on white/surface bg.
+     No more text fighting the photo. */
+  .hero {
+    min-height: auto;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-bg {
+    position: relative;
+    inset: unset;
+    height: 280px;
+    width: 100%;
+    background-size: cover;
+    background-position: top center;
+    opacity: 1;
+    flex-shrink: 0;
+  }
+  .hero-inner {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: unset;
+    gap: 0;
+    padding: 28px 20px 40px;
+    background: var(--surface);
+  }
+
+  /* Hide hero product cards on mobile — not enough space */
   .hero-visual { display: none; }
-  .hero-stats { gap: 20px; }
-  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .categories-grid { grid-template-columns: repeat(4, 1fr); }
-  .flash-banner { flex-direction: column; align-items: flex-start; padding: 24px; }
-  .trust-bar-inner { justify-content: center; }
-  .section { padding: 40px 0; }
+
+  .hero-tag { margin-bottom: 16px; }
+
+  .hero-headline {
+    font-size: 36px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    max-width: 100%;
+    margin-bottom: 24px;
+    line-height: 1.55;
+  }
+
+  /* Buttons stack full-width — easier to tap */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hero-actions a {
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* Stats: 3-column grid, centered, equal spacing */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 28px;
+    padding-top: 20px;
+    text-align: center;
+  }
+  .hero-stat-num { font-size: 22px; }
+  .hero-stat-label { font-size: 11px; }
+
+  /* ── TRUST BAR ──
+     Horizontally scrollable strip — all 5 items accessible,
+     no wrapping, no centering mess */
+  .trust-bar { padding: 12px 0; }
+  .trust-bar-inner {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 20px;
+    gap: 20px;
+  }
+  .trust-bar-inner::-webkit-scrollbar { display: none; }
+  .trust-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+
+  /* ── SECTIONS ── */
+  .section { padding: 32px 0; }
+  .section + .section { padding-top: 0; }
+
+  .section-header { margin-bottom: 18px; }
+  .section-title { font-size: 20px; }
+  .section-link { font-size: 13px; }
+
+  /* ── CATEGORIES ──
+     4-per-row on mobile — compact but readable */
+  .categories-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .category-card {
+    padding: 14px 6px;
+    gap: 6px;
+    border-radius: 12px;
+  }
+  .category-card iconify-icon { font-size: 22px; }
+  .category-card span { font-size: 10px; }
+
+  /* ── PRODUCT CARDS ──
+     2-per-row, tighter padding, slightly smaller text */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .product-card { border-radius: 12px; }
+  .product-card-body { padding: 10px; }
+  .product-card-seller { font-size: 10px; }
+  .product-card-name { font-size: 12px; margin-bottom: 6px; }
+  .product-card-price { font-size: 13px; }
+  .product-card-price-old { font-size: 11px; }
+  .product-card-footer { padding-top: 8px; }
+  .product-card-rating { font-size: 11px; }
+
+  /* ── FLASH BANNER ──
+     Stack vertically, CTA button goes full-width */
+  .flash-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    border-radius: 12px;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .flash-banner > a {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  .flash-title { font-size: 18px; }
+  .flash-sub { font-size: 12px; }
+  .flash-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .flash-icon iconify-icon { font-size: 20px; }
+
+  /* ── SELLER CTA ──
+     Single column, icon hidden, text/button stack naturally */
+  .seller-cta-wrap {
+    grid-template-columns: 1fr !important;
+    padding: 28px 20px !important;
+    border-radius: 16px !important;
+    gap: 20px !important;
+  }
+  .seller-cta-icon { display: none; }
+  .seller-cta-headline { font-size: 26px !important; }
+  .seller-cta-body { font-size: 14px !important; }
+  .seller-cta-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+  .seller-cta-actions > a {
+    text-align: center;
+    justify-content: center;
+  }
 }
 </style>
 {% endblock %}
@@ -414,7 +592,7 @@
         &amp; <em>Sell.</em>
       </h1>
       <p class="hero-sub">
-        Thousands of verified sellers. One marketplace built for Nigeria. Buy anything, sell anything — all in one place.
+        Thousands of verified sellers. One marketplace built for Nigeria. Buy anything, sell anything all in one place.
       </p>
       <div class="hero-actions">
         <a href="/marketplace/" class="btn-primary" style="padding:14px 28px;font-size:15px;">
@@ -443,54 +621,22 @@
       </div>
     </div>
 
-    {# Hero product cards — shows first 3 new arrivals #}
-    <div class="hero-visual">
-      {% for product in new_arrivals|slice:":3" %}
-        {% with primary_img=product.images.all|first %}
-        {% if forloop.first %}
-        <a href="{% url 'products:detail' product.slug %}" class="hero-card">
-          <div style="width:80px;height:80px;border-radius:10px;background:var(--surface-alt);overflow:hidden;flex-shrink:0;">
-            {% if primary_img %}
-            <img src="{{ primary_img.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
-            {% else %}
-            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-              <iconify-icon icon="heroicons:photo" style="font-size:28px;color:var(--text-muted);"></iconify-icon>
-            </div>
-            {% endif %}
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text-muted);font-family:'Satoshi',sans-serif;margin-bottom:4px;">{{ product.seller.store_name }}</div>
-            <div class="hero-card-name" style="font-size:14px;max-width:none;">{{ product.name }}</div>
-            <div class="hero-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</div>
-          </div>
-        </a>
-        {% else %}
-        <a href="{% url 'products:detail' product.slug %}" class="hero-card" style="display:flex;flex-direction:column;">
-          <div style="aspect-ratio:1;background:var(--surface-alt);overflow:hidden;">
-            {% if primary_img %}
-            <img src="{{ primary_img.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
-            {% else %}
-            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-              <iconify-icon icon="heroicons:photo" style="font-size:28px;color:var(--text-muted);"></iconify-icon>
-            </div>
-            {% endif %}
-          </div>
-          <div class="hero-card-body">
-            <div class="hero-card-name">{{ product.name }}</div>
-            <div class="hero-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</div>
-          </div>
-        </a>
-        {% endif %}
-        {% endwith %}
-      {% empty %}
-        <div class="hero-card" style="grid-column:1/-1;padding:32px;display:flex;align-items:center;justify-content:center;">
-          <div style="text-align:center;color:var(--text-muted);">
-            <iconify-icon icon="heroicons:shopping-bag" style="font-size:40px;"></iconify-icon>
-            <p style="font-family:'Satoshi',sans-serif;font-size:14px;margin-top:8px;">Products coming soon</p>
-          </div>
-        </div>
-      {% endfor %}
+  {# Hero promo card — admin-controlled, not auto-populated from products #}
+  {% if platform_coupon %}
+    <div class="hero-coupon-card">
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Platform Offer</div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:52px;font-weight:700;color:var(--text);line-height:1;letter-spacing:-0.03em;">
+        {{ platform_coupon.discount_value|floatformat:0 }}%
+      </div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:12px;">OFF</div>
+      <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--accent);background:var(--accent-soft);padding:10px 16px;border-radius:8px;letter-spacing:0.08em;margin-bottom:12px;">
+        {{ platform_coupon.code }}
+      </div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+        Valid until {{ platform_coupon.valid_until|date:"M d, Y" }}
+      </div>
     </div>
+    {% endif %}
   </div>
 </section>
 
@@ -596,7 +742,7 @@
         </div>
       </a>
       {% endfor %}
-</div>
+    </div>
   </div>
 </section>
 {% endif %}
@@ -648,11 +794,66 @@
   </div>
 </section>
 
+{# ── SELLER DEALS ── #}
+{% if seller_deals %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Seller deals</h2>
+      <a href="/marketplace/" class="section-link">
+        Browse all
+        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+    </div>
+    <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;">
+      {% for coupon in seller_deals %}
+      <a href="/store/{{ coupon.seller.store_slug }}/" style="
+        flex-shrink:0;
+        width:220px;
+        background:var(--surface);
+        border:1.5px solid var(--border);
+        border-radius:14px;
+        padding:20px;
+        text-decoration:none;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        transition:transform 0.2s,box-shadow 0.2s;
+      " onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+        <div style="display:flex;align-items:center;gap:10px;">
+          {% if coupon.seller.logo %}
+          <img src="{{ coupon.seller.logo.url }}" alt="{{ coupon.seller.store_name }}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;">
+          {% else %}
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;">
+            <iconify-icon icon="heroicons:building-storefront" style="font-size:18px;color:var(--accent);"></iconify-icon>
+          </div>
+          {% endif %}
+          <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ coupon.seller.store_name }}
+          </div>
+        </div>
+        <div style="font-family:'Clash Display',sans-serif;font-size:36px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-0.02em;">
+          {{ coupon.discount_value|floatformat:0 }}%
+        </div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);">OFF selected items</div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;padding:6px 10px;text-align:center;letter-spacing:0.06em;">
+          {{ coupon.code }}
+        </div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);">
+          Ends {{ coupon.valid_until|date:"M d" }}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {# ── BECOME A SELLER CTA ── #}
 {% if not user.is_authenticated or user.role == 'buyer' %}
 <section class="section">
   <div class="container">
-    <div style="
+    <div class="seller-cta-wrap" style="
       background: var(--surface-alt);
       border: 1px solid var(--border);
       border-radius: 20px;
@@ -664,13 +865,13 @@
     ">
       <div>
         <p style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">For sellers</p>
-        <h2 style="font-family:'Clash Display',sans-serif;font-size:36px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:14px;line-height:1.1;">
+        <h2 class="seller-cta-headline" style="font-family:'Clash Display',sans-serif;font-size:36px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:14px;line-height:1.1;">
           Your store.<br>Your customers.
         </h2>
-        <p style="font-family:'Satoshi',sans-serif;font-size:16px;color:var(--text-muted);line-height:1.6;max-width:480px;">
+        <p class="seller-cta-body" style="font-family:'Satoshi',sans-serif;font-size:16px;color:var(--text-muted);line-height:1.6;max-width:480px;">
           Start selling in minutes. Set up your storefront, list products, and get paid directly via Flutterwave. No hidden fees on your first ₦500k.
         </p>
-        <div style="display:flex;align-items:center;gap:24px;margin-top:28px;flex-wrap:wrap;">
+        <div class="seller-cta-actions" style="display:flex;align-items:center;gap:24px;margin-top:28px;flex-wrap:wrap;">
           <a href="{% if user.is_authenticated %}/store/become-seller/{% else %}/auth/register/{% endif %}" class="btn-primary" style="padding:14px 28px;font-size:15px;">
             Open your store
             <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
@@ -691,7 +892,7 @@
           </div>
         </div>
       </div>
-      <div style="text-align:center;" class="hide-mobile">
+      <div class="seller-cta-icon" style="text-align:center;">
         <div style="width:120px;height:120px;background:var(--accent-soft);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto;">
           <iconify-icon icon="heroicons:building-storefront" style="font-size:56px;color:var(--accent);"></iconify-icon>
         </div>

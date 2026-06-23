@@ -1,11 +1,250 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Resend Verification Email</h1>
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Resend verification — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+#navbar, #mobile-tabbar, #mobile-search, footer { display: none !important; }
+.page-content { padding-top: 0 !important; }
+
+.resend-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+
+.resend-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 44px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.resend-icon-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(201,80,42,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.resend-icon-badge iconify-icon {
+  font-size: 26px;
+  color: var(--accent);
+}
+
+.resend-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+
+.resend-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+.resend-sub strong { color: var(--text); font-weight: 600; }
+
+.field-group { margin-bottom: 20px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-input-wrap { position: relative; }
+.field-input-wrap > iconify-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+.auth-input {
+  width: 100%;
+  padding: 13px 16px 13px 42px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.auth-input.has-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+.field-error {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resend-submit {
+  width: 100%;
+  padding: 14px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-top: 4px;
+}
+.resend-submit:hover { opacity: 0.85; transform: translateY(-1px); }
+.resend-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.resend-alert {
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.resend-alert.success {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: #15803D;
+}
+.resend-alert.error {
+  background: #FEE2E2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+.resend-alert iconify-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+.resend-footer-link {
+  text-align: center;
+  margin-top: 24px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.resend-footer-link a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.resend-footer-link a:hover { text-decoration: underline; }
+
+.resend-brand {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  margin-bottom: 28px;
+}
+.resend-brand span { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="resend-wrap">
+  <div class="resend-card">
+
+    <a href="/" class="resend-brand">NE<span>X</span>O</a>
+
+    <div class="resend-icon-badge">
+      <iconify-icon icon="heroicons:envelope-open"></iconify-icon>
+    </div>
+
+    <h1 class="resend-title">Resend verification email</h1>
+    <p class="resend-sub">
+      Enter the email address you signed up with and we'll send you a new
+      verification link. <strong>Links expire after 15 minutes</strong>, so
+      grab it as soon as it lands.
+    </p>
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="resend-alert {% if message.tags == 'error' %}error{% else %}success{% endif %}">
+        <iconify-icon icon="{% if message.tags == 'error' %}heroicons:exclamation-circle{% else %}heroicons:check-circle{% endif %}"></iconify-icon>
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+    <div class="resend-alert error">
+      <iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>
+      <span>{{ form.non_field_errors|join:", " }}</span>
+    </div>
+    {% endif %}
+
     <form method="post">
-        {% csrf_token %}
-        <input type="email" name="email" placeholder="your@email.com">
-        <button type="submit">Send New Link</button>
+      {% csrf_token %}
+
+      <div class="field-group">
+        <label class="field-label" for="id_email">Email</label>
+        <div class="field-input-wrap">
+          <iconify-icon icon="heroicons:envelope"></iconify-icon>
+          <input
+            type="email"
+            name="email"
+            id="id_email"
+            class="auth-input {% if form.email.errors %}has-error{% endif %}"
+            placeholder="you@email.com"
+            value="{{ form.email.value|default:'' }}"
+            autocomplete="email"
+            required
+          />
+        </div>
+        {% if form.email.errors %}
+        <p class="field-error">
+          <iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>
+          {{ form.email.errors|join:", " }}
+        </p>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="resend-submit">Send new link</button>
     </form>
-</body>
-</html>
+
+    <p class="resend-footer-link">
+      Remembered your password? <a href="{% url 'accounts:login' %}">Sign in</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

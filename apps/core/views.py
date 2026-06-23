@@ -72,6 +72,25 @@ def homepage(request):
         parent=None,
     ).order_by('order')[:12]
 
+    # Active seller coupons for horizontal deals strip
+    from apps.core.models import Coupon
+    from django.utils import timezone as tz
+    now_time = tz.now()
+    seller_deals = Coupon.objects.filter(
+        is_active=True,
+        seller__isnull=False,
+        valid_from__lte=now_time,
+        valid_until__gte=now_time,
+    ).select_related('seller').order_by('-discount_value')[:12]
+
+    # Admin platform coupon (shown in hero)
+    platform_coupon = Coupon.objects.filter(
+        is_active=True,
+        seller__isnull=True,
+        valid_from__lte=now_time,
+        valid_until__gte=now_time,
+    ).order_by('-discount_value').first()
+
     # Exchange rate for currency toggle
     exchange_rate = get_exchange_rate()
 
@@ -81,6 +100,8 @@ def homepage(request):
         'flash_sales': flash_sales,
         'categories': categories,
         'exchange_rate': exchange_rate,
+        'seller_deals': seller_deals,
+        'platform_coupon': platform_coupon,
     })
 
 

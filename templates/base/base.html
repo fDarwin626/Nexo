@@ -42,7 +42,7 @@
       --success:      #22C55E;
       --warning:      #F59E0B;
       --danger:       #EF4444;
-      --nav-bg:       rgba(250, 247, 245, 0.92);
+      --nav-bg:       rgba(250, 247, 245, 0);
       --shadow:       0 1px 3px rgba(28,15,10,0.08), 0 4px 16px rgba(28,15,10,0.04);
       --shadow-lg:    0 8px 32px rgba(28,15,10,0.12);
     }
@@ -61,7 +61,7 @@
       --success:      #22C55E;
       --warning:      #F59E0B;
       --danger:       #EF4444;
-      --nav-bg:       rgba(15, 9, 7, 0.92);
+      --nav-bg:       rgba(15, 9, 7, 0);
       --shadow:       0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
       --shadow-lg:    0 8px 32px rgba(0,0,0,0.4);
     }
@@ -151,17 +151,17 @@
 
     /* ── NAVBAR ────────────────────────────────────────────── */
     #navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      background: var(--nav-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      transition: transform 0.3s ease, background 0.3s ease;
-    }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: transparent !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
 
     #navbar.hidden-up {
       transform: translateY(-100%);
@@ -513,19 +513,33 @@
     [data-theme="dark"] .badge-warning { background: #451A03; color: #FCD34D; }
     [data-theme="dark"] .badge-danger  { background: #450A0A; color: #FCA5A5; }
 
-    /* ── SCROLLBAR ─────────────────────────────────────────── */
+/* ── SCROLLBAR ─────────────────────────────────────────── */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    [x-cloak] { display: none !important; }
+
+    /* ── NO-NAV PAGES (auth screens) ───────────────────────── */
+    body.no-nav #navbar,
+    body.no-nav #mobile-tabbar,
+    body.no-nav #mobile-search,
+    body.no-nav footer {
+      display: none !important;
+    }
+    body.no-nav .page-content {
+      padding-top: 0 !important;
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
 </head>
 
 <body
+  class="{% block body_class %}{% endblock %}"
   x-data="{
-    theme: localStorage.getItem('nexo-theme') || 'light',
+      theme: localStorage.getItem('nexo-theme') || 'light',
     showCategories: false,
     notifCount: 0,
     cartCount: 0,
@@ -700,6 +714,7 @@
 {# ── CATEGORIES MEGA DROPDOWN ────────────────────────────────── #}
 <div
   class="categories-dropdown"
+  x-cloak
   x-show="showCategories"
   x-transition:enter="transition ease-out duration-150"
   x-transition:enter-start="opacity-0 -translate-y-2"
@@ -811,7 +826,7 @@
     <div style="height:1px; background:var(--border); margin-bottom:24px;"></div>
 
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-      <p style="font-size:13px; color:var(--text-muted);">© 2026 Nexo. All rights reserved.</p>
+      <p style="font-size:13px; color:var(--text-muted);">@CoCoNuT-sTuDuOIs © 2026 Nexo. All rights reserved.</p>
       <div style="display:flex; align-items:center; gap:16px;">
         <button @click="toggleTheme()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:'Satoshi',sans-serif;display:flex;align-items:center;gap:6px;">
           <iconify-icon x-show="theme === 'light'" icon="heroicons:moon" style="font-size:16px;"></iconify-icon>

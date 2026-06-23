@@ -18,6 +18,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.http import require_POST
+import logging
 
 
 from .forms import (
@@ -29,6 +30,7 @@ from .forms import (
 from .tokens import email_verification_token, password_reset_token
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def register_buyer(request):
@@ -50,7 +52,10 @@ def register_buyer(request):
             try:
                 _send_verification_email(request, user)
             except Exception as e:
-                print(f'DEBUG ERROR: {e}')
+                logger.exception(f'Failed to send verification email to {user.email}: {e}')
+                messages.error(request, 'We could not send your verification email. Please try resending it below.')
+                request.session['verification_email'] = user.email
+                return redirect('accounts:resend_verification')
             request.session['verification_email'] = user.email
             return redirect('accounts:verification_sent')
 

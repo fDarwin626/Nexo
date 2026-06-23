@@ -27,7 +27,7 @@ DATABASES = {
 # ── EMAIL IN DEV ─────────────────────────────────────────────
 # In development print emails to terminal instead of actually sending
 # This way you can see verification emails without a real email setup yet
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 DEFAULT_CHARSET = 'utf-8'
 
 # ── DJANGO DEBUG TOOLBAR (optional but useful) ───────────────

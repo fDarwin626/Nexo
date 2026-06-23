@@ -60,7 +60,36 @@ def product_create(request):
         return redirect('/')
 
     if request.method == 'POST':
-        form = ProductForm(request.POST)
+        # Handle new subcategory creation before form validation
+        new_subcategory_name = request.POST.get('new_subcategory', '').strip()
+        parent_category_id = request.POST.get('parent_category_id', '').strip()
+
+        if new_subcategory_name and parent_category_id:
+            try:
+                parent_cat = Category.objects.get(
+                    pk=parent_category_id,
+                    parent__isnull=True,
+                    is_active=True,
+                )
+                sub, created = Category.objects.get_or_create(
+                    name__iexact=new_subcategory_name,
+                    parent=parent_cat,
+                    defaults={
+                        'name': new_subcategory_name,
+                        'parent': parent_cat,
+                        'is_active': True,
+                        'icon': 'mdi:tag',
+                    }
+                )
+                # Inject the new subcategory id into POST data
+                post_data = request.POST.copy()
+                post_data['category'] = sub.pk
+                form = ProductForm(post_data)
+            except Category.DoesNotExist:
+                form = ProductForm(request.POST)
+        else:
+            form = ProductForm(request.POST)
+
         if form.is_valid():
             with transaction.atomic():
                 product = form.save(commit=False)

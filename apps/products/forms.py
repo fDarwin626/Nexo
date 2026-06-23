@@ -8,6 +8,8 @@
 
 from django import forms
 from django.core.exceptions import ValidationError
+from unicodedata import category
+
 from .models import Product, ProductSKU, ProductImage, Category, VariantOption
 
 
@@ -54,6 +56,7 @@ class ProductForm(forms.ModelForm):
             'discount_percent',
             'discount_until',
         ]
+
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'eg Nike Air Max 270',
@@ -94,7 +97,8 @@ class ProductForm(forms.ModelForm):
         # Only show active categories
         super().__init__(*args, **kwargs)
         self.fields['category'].queryset = Category.objects.filter(
-            is_active=True
+            is_active=True,
+            parent__isnull=False,
         ).order_by('parent__name', 'name')
         self.fields['discount_percent'].required = False
         self.fields['discount_until'].required = False
@@ -110,6 +114,14 @@ class ProductForm(forms.ModelForm):
         if discount < 0 or discount > 50:
             raise ValidationError('Discount must be between 0 and 50%')
         return discount
+
+    def clean_category(self):
+        category = self.cleaned_data.get('category')
+        if category and category.parent is None:
+            raise ValidationError(
+                'Please select a subCategory, not a top level category'
+            )
+        return category
 
 
 class ProductSKUForm(forms.Form):
