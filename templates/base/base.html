@@ -1,0 +1,876 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Nexo — Nigerian Marketplace{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Nexo — Nigeria's multi-vendor marketplace. Buy and sell anything.{% endblock %}">
+
+  {# ── FONTS ──────────────────────────────────────────────── #}
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700&f[]=dm-mono@400,500&display=swap" rel="stylesheet" />
+
+  {# ── TAILWIND ────────────────────────────────────────────── #}
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  {# ── ICONIFY ─────────────────────────────────────────────── #}
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+  {# ── ALPINE.JS ───────────────────────────────────────────── #}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  {# ── GSAP ────────────────────────────────────────────────── #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <style>
+    /* ── CSS CUSTOM PROPERTIES ─────────────────────────────── */
+    :root {
+      /* Light mode — default */
+      --bg:           #FAF7F5;
+      --surface:      #FFFFFF;
+      --surface-alt:  #F5EEE9;
+      --border:       #EDE0D8;
+      --text:         #1C0F0A;
+      --text-muted:   #9A8A84;
+      --accent:       #C9502A;
+      --accent-hover: #A8401F;
+      --accent-soft:  #F5EEE9;
+      --terra:        #8B4A2B;
+      --success:      #22C55E;
+      --warning:      #F59E0B;
+      --danger:       #EF4444;
+      --nav-bg:       rgba(250, 247, 245, 0.92);
+      --shadow:       0 1px 3px rgba(28,15,10,0.08), 0 4px 16px rgba(28,15,10,0.04);
+      --shadow-lg:    0 8px 32px rgba(28,15,10,0.12);
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0F0907;
+      --surface:      #1A100B;
+      --surface-alt:  #241510;
+      --border:       #2E1A12;
+      --text:         #FAF7F5;
+      --text-muted:   #9A8A84;
+      --accent:       #FF4D00;
+      --accent-hover: #E04400;
+      --accent-soft:  #2E1A12;
+      --terra:        #C96A3A;
+      --success:      #22C55E;
+      --warning:      #F59E0B;
+      --danger:       #EF4444;
+      --nav-bg:       rgba(15, 9, 7, 0.92);
+      --shadow:       0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    /* ── BASE RESET ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Satoshi', system-ui, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+      /* bottom padding for mobile tab bar */
+      padding-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+      body { padding-bottom: 72px; }
+    }
+
+    /* ── TYPOGRAPHY ────────────────────────────────────────── */
+    .font-display  { font-family: 'Clash Display', system-ui, sans-serif; }
+    .font-body     { font-family: 'Satoshi', system-ui, sans-serif; }
+    .font-mono     { font-family: 'DM Mono', monospace; }
+
+    /* ── COMPONENTS ────────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #FAF7F5;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Satoshi', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(201,80,42,0.3);
+    }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Satoshi', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      text-decoration: none;
+    }
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    /* ── NAVBAR ────────────────────────────────────────────── */
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: var(--nav-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+
+    #navbar.hidden-up {
+      transform: translateY(-100%);
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* Brand */
+    .nav-brand {
+      font-family: 'Clash Display', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+    .nav-brand span { color: var(--accent); }
+
+    /* Search bar — desktop */
+    .nav-search {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+    .nav-search input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: var(--surface-alt);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .nav-search input::placeholder { color: var(--text-muted); }
+    .nav-search input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+    }
+    .nav-search .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    /* Nav links — desktop */
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .nav-link {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+    .nav-link:hover {
+      color: var(--text);
+      background: var(--surface-alt);
+    }
+    .nav-link.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* Icon buttons in nav */
+    .nav-icon-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+    .nav-icon-btn:hover { background: var(--surface-alt); }
+
+    .nav-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Categories mega dropdown */
+    .nav-categories-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .nav-categories-btn:hover { background: var(--surface-alt); }
+
+    .categories-dropdown {
+      position: fixed;
+      top: 64px;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      z-index: 999;
+      padding: 24px 0;
+    }
+    .categories-dropdown-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .category-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.2s, color 0.2s;
+      text-align: center;
+    }
+    .category-item:hover {
+      background: var(--surface-alt);
+      color: var(--accent);
+    }
+    .category-item iconify-icon { font-size: 24px; }
+    .category-item span {
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Satoshi', sans-serif;
+    }
+
+    /* ── MOBILE BOTTOM TAB BAR ─────────────────────────────── */
+    #mobile-tabbar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    }
+
+    @media (max-width: 768px) {
+      #mobile-tabbar { display: flex; }
+      .nav-search, .nav-links { display: none; }
+      .nav-inner { padding: 0 16px; }
+    }
+
+    .tab-bar-inner {
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: color 0.2s;
+      position: relative;
+    }
+    .tab-item.active { color: var(--accent); }
+    .tab-item iconify-icon { font-size: 22px; }
+    .tab-item span {
+      font-size: 10px;
+      font-weight: 500;
+      font-family: 'Satoshi', sans-serif;
+    }
+    .tab-badge {
+      position: absolute;
+      top: 2px;
+      right: calc(50% - 18px);
+      min-width: 15px;
+      height: 15px;
+      padding: 0 4px;
+      background: var(--accent);
+      color: white;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Mobile search bar — below navbar */
+    #mobile-search {
+      display: none;
+      padding: 10px 16px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 768px) {
+      #mobile-search { display: block; }
+    }
+    #mobile-search input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+    }
+
+    /* ── PAGE CONTENT ──────────────────────────────────────── */
+    .page-content {
+      padding-top: 64px; /* navbar height */
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    @media (max-width: 768px) {
+      .container { padding: 0 16px; }
+    }
+
+    /* ── TOAST MESSAGES ────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      bottom: 80px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    @media (max-width: 768px) {
+      .toast-container { right: 16px; left: 16px; bottom: 88px; }
+    }
+    .toast {
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-family: 'Satoshi', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      animation: slideInRight 0.3s ease;
+      max-width: 360px;
+    }
+    .toast-success { background: #1A2E1A; color: #86EFAC; border: 1px solid #166534; }
+    .toast-error   { background: #2E1A1A; color: #FCA5A5; border: 1px solid #991B1B; }
+    .toast-info    { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    /* ── UTILITY ────────────────────────────────────────────── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+    .price {
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .price-accent {
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      color: var(--accent);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Satoshi', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .badge-accent  { background: var(--accent-soft); color: var(--accent); }
+    .badge-success { background: #DCFCE7; color: #166534; }
+    .badge-warning { background: #FEF3C7; color: #92400E; }
+    .badge-danger  { background: #FEE2E2; color: #991B1B; }
+
+    [data-theme="dark"] .badge-success { background: #14532D; color: #86EFAC; }
+    [data-theme="dark"] .badge-warning { background: #451A03; color: #FCD34D; }
+    [data-theme="dark"] .badge-danger  { background: #450A0A; color: #FCA5A5; }
+
+    /* ── SCROLLBAR ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body
+  x-data="{
+    theme: localStorage.getItem('nexo-theme') || 'light',
+    showCategories: false,
+    notifCount: 0,
+    cartCount: 0,
+    lastScrollY: 0,
+    navHidden: false,
+
+    initTheme() {
+      document.documentElement.setAttribute('data-theme', this.theme);
+    },
+    toggleTheme() {
+      this.theme = this.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', this.theme);
+      localStorage.setItem('nexo-theme', this.theme);
+    },
+    async fetchCounts() {
+      {% if user.is_authenticated %}
+      try {
+        const r = await fetch('/notifications/unread-count/');
+        const d = await r.json();
+        this.notifCount = d.count || 0;
+      } catch(e) {}
+      {% endif %}
+    }
+  }"
+  x-init="initTheme(); fetchCounts(); setInterval(() => fetchCounts(), 30000)"
+  @scroll.window="
+    const y = window.scrollY;
+    navHidden = y > lastScrollY && y > 80;
+    lastScrollY = y;
+  "
+>
+
+{# ── NAVBAR ──────────────────────────────────────────────────── #}
+<nav id="navbar" :class="{ 'hidden-up': navHidden }">
+  <div class="nav-inner">
+
+    {# Brand #}
+    <a href="/" class="nav-brand">
+      NE<span>X</span>O
+    </a>
+
+    {# Search — desktop only #}
+    <div class="nav-search">
+      <form action="/marketplace/" method="get">
+        <iconify-icon icon="heroicons:magnifying-glass" class="search-icon"></iconify-icon>
+        <input
+          type="search"
+          name="q"
+          placeholder="Search products, stores..."
+          value="{{ request.GET.q|default:'' }}"
+          autocomplete="off"
+        />
+      </form>
+    </div>
+
+    {# Desktop nav links #}
+    <div class="nav-links">
+
+      {# Categories trigger #}
+      <button
+        class="nav-categories-btn"
+        @click="showCategories = !showCategories"
+        @click.outside="showCategories = false"
+      >
+        <iconify-icon icon="heroicons:squares-2x2"></iconify-icon>
+        Browse
+        <iconify-icon
+          icon="heroicons:chevron-down"
+          style="transition: transform 0.2s"
+          :style="showCategories ? 'transform:rotate(180deg)' : ''"
+        ></iconify-icon>
+      </button>
+
+      <a href="/marketplace/" class="nav-link {% if request.path == '/marketplace/' %}active{% endif %}">
+        Marketplace
+      </a>
+
+      {% if user.is_authenticated %}
+        {# Notifications bell #}
+        <a href="/notifications/" class="nav-icon-btn" title="Notifications">
+          <iconify-icon icon="heroicons:bell" style="font-size:20px"></iconify-icon>
+          <span class="nav-badge" x-show="notifCount > 0" x-text="notifCount > 9 ? '9+' : notifCount"></span>
+        </a>
+
+        {# Cart #}
+        <a href="/orders/cart/" class="nav-icon-btn" title="Cart">
+          <iconify-icon icon="heroicons:shopping-bag" style="font-size:20px"></iconify-icon>
+          {% if cart_count %}
+          <span class="nav-badge">{{ cart_count }}</span>
+          {% endif %}
+        </a>
+
+        {# Profile dropdown #}
+        <div x-data="{ open: false }" style="position:relative">
+          <button
+            @click="open = !open"
+            @click.outside="open = false"
+            class="nav-icon-btn"
+            title="Account"
+          >
+            <iconify-icon icon="heroicons:user-circle" style="font-size:22px"></iconify-icon>
+          </button>
+
+          <div
+            x-show="open"
+            x-transition
+            style="
+              position:absolute; right:0; top:calc(100% + 8px);
+              background:var(--surface); border:1px solid var(--border);
+              border-radius:12px; box-shadow:var(--shadow-lg);
+              min-width:200px; overflow:hidden; z-index:1001;
+            "
+          >
+            <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+              <p style="font-size:13px; font-weight:600; color:var(--text);">{{ user.get_short_name }}</p>
+              <p style="font-size:12px; color:var(--text-muted);">{{ user.email }}</p>
+            </div>
+            <div style="padding:6px;">
+              <a href="/auth/profile/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;transition:background 0.15s" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'">
+                <iconify-icon icon="heroicons:user"></iconify-icon> My Account
+              </a>
+              <a href="/orders/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;transition:background 0.15s" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'">
+                <iconify-icon icon="heroicons:shopping-bag"></iconify-icon> My Orders
+              </a>
+              <a href="/wishlist/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;transition:background 0.15s" onmouseover="this.style.background='var(--surface-alt)'" onmouseout="this.style.background='transparent'">
+                <iconify-icon icon="heroicons:heart"></iconify-icon> Wishlist
+              </a>
+              {% if user.role == 'seller' %}
+              <a href="/dashboard/seller/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--accent);text-decoration:none;font-size:14px;font-weight:600;transition:background 0.15s" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background='transparent'">
+                <iconify-icon icon="heroicons:store"></iconify-icon> Seller Dashboard
+              </a>
+              {% endif %}
+              {% if user.is_staff %}
+              <a href="/dashboard/admin/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--accent);text-decoration:none;font-size:14px;font-weight:600;transition:background 0.15s" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background='transparent'">
+                <iconify-icon icon="heroicons:shield-check"></iconify-icon> Admin Panel
+              </a>
+              {% endif %}
+              <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+              <form method="post" action="/auth/logout/">
+                {% csrf_token %}
+                <button type="submit" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--danger);background:transparent;border:none;cursor:pointer;font-size:14px;font-weight:500;font-family:'Satoshi',sans-serif;transition:background 0.15s" onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='transparent'">
+                  <iconify-icon icon="heroicons:arrow-left-on-rectangle"></iconify-icon> Sign out
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      {% else %}
+        {# Guest — login / register #}
+        <a href="/auth/login/" class="btn-ghost" style="padding:8px 18px; font-size:14px;">Sign in</a>
+        <a href="/auth/register/" class="btn-primary" style="padding:8px 18px; font-size:14px;">Join free</a>
+      {% endif %}
+
+      {# Dark/light toggle #}
+      <button
+        @click="toggleTheme()"
+        class="nav-icon-btn"
+        :title="theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'"
+        style="margin-left:4px;"
+      >
+        <iconify-icon x-show="theme === 'light'" icon="heroicons:moon" style="font-size:20px"></iconify-icon>
+        <iconify-icon x-show="theme === 'dark'"  icon="heroicons:sun"  style="font-size:20px"></iconify-icon>
+      </button>
+
+    </div>{# end nav-links #}
+  </div>{# end nav-inner #}
+</nav>
+
+{# ── CATEGORIES MEGA DROPDOWN ────────────────────────────────── #}
+<div
+  class="categories-dropdown"
+  x-show="showCategories"
+  x-transition:enter="transition ease-out duration-150"
+  x-transition:enter-start="opacity-0 -translate-y-2"
+  x-transition:enter-end="opacity-100 translate-y-0"
+  x-transition:leave="transition ease-in duration-100"
+  x-transition:leave-start="opacity-100 translate-y-0"
+  x-transition:leave-end="opacity-0 -translate-y-2"
+  @click.outside="showCategories = false"
+>
+  <div class="categories-dropdown-inner">
+    {% for category in all_categories %}
+    <a href="/category/{{ category.slug }}/" class="category-item">
+      <iconify-icon icon="{{ category.icon|default:'mdi:tag' }}"></iconify-icon>
+      <span>{{ category.name }}</span>
+    </a>
+    {% empty %}
+    <p style="color:var(--text-muted); font-size:14px; grid-column:1/-1;">No categories yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── MOBILE: search bar below nav ────────────────────────────── #}
+<div id="mobile-search" style="padding-top: 64px;">
+  <form action="/marketplace/" method="get" style="position:relative;">
+    <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px;"></iconify-icon>
+    <input
+      type="search"
+      name="q"
+      placeholder="Search products, stores..."
+      value="{{ request.GET.q|default:'' }}"
+      style="width:100%;padding:10px 16px 10px 40px;background:var(--surface);border:1.5px solid var(--border);border-radius:24px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;"
+    />
+  </form>
+</div>
+
+{# ── DJANGO MESSAGES → TOASTS ────────────────────────────────── #}
+{% if messages %}
+<div class="toast-container" id="toast-container">
+  {% for message in messages %}
+  <div class="toast toast-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}"
+       x-data="{ show: true }"
+       x-show="show"
+       x-init="setTimeout(() => show = false, 4000)"
+       x-transition:leave="transition ease-in duration-300"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0 translate-x-4"
+  >
+    <iconify-icon
+      icon="{% if message.tags == 'error' %}heroicons:x-circle{% elif message.tags == 'success' %}heroicons:check-circle{% else %}heroicons:information-circle{% endif %}"
+      style="font-size:18px; flex-shrink:0;"
+    ></iconify-icon>
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── MAIN CONTENT ─────────────────────────────────────────────── #}
+<main class="page-content">
+  {% block content %}{% endblock %}
+</main>
+
+{# ── FOOTER ───────────────────────────────────────────────────── #}
+<footer style="
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 48px 0 32px;
+  margin-top: 80px;
+">
+  <div class="container">
+    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:40px; margin-bottom:40px;">
+
+      {# Brand col #}
+      <div>
+        <a href="/" class="nav-brand" style="display:inline-block; margin-bottom:12px;">NE<span>X</span>O</a>
+        <p style="font-size:14px; color:var(--text-muted); line-height:1.6; max-width:260px;">
+          Nigeria's multi-vendor marketplace. Buy from thousands of verified sellers — all in one place.
+        </p>
+      </div>
+
+      {# Links #}
+      <div>
+        <p style="font-size:12px; font-weight:700; color:var(--text); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Shop</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a href="/marketplace/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Marketplace</a>
+          <a href="/category/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Categories</a>
+          <a href="/marketplace/?sort=flash_sale" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Flash Sales</a>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size:12px; font-weight:700; color:var(--text); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Sell</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a href="/store/become-seller/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Become a Seller</a>
+          <a href="/dashboard/seller/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Seller Dashboard</a>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size:12px; font-weight:700; color:var(--text); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Help</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a href="/disputes/my/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Disputes</a>
+          <a href="/auth/login/" style="font-size:14px; color:var(--text-muted); text-decoration:none; transition:color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Sign in</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="height:1px; background:var(--border); margin-bottom:24px;"></div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <p style="font-size:13px; color:var(--text-muted);">© 2026 Nexo. All rights reserved.</p>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <button @click="toggleTheme()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;font-family:'Satoshi',sans-serif;display:flex;align-items:center;gap:6px;">
+          <iconify-icon x-show="theme === 'light'" icon="heroicons:moon" style="font-size:16px;"></iconify-icon>
+          <iconify-icon x-show="theme === 'dark'"  icon="heroicons:sun"  style="font-size:16px;"></iconify-icon>
+          <span x-text="theme === 'light' ? 'Dark mode' : 'Light mode'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</footer>
+
+{# ── MOBILE BOTTOM TAB BAR ───────────────────────────────────── #}
+<nav id="mobile-tabbar">
+  <div class="tab-bar-inner">
+
+    <a href="/" class="tab-item {% if request.path == '/' %}active{% endif %}">
+      <iconify-icon icon="heroicons:home"></iconify-icon>
+      <span>Home</span>
+    </a>
+
+    <a href="/marketplace/" class="tab-item {% if '/marketplace/' in request.path %}active{% endif %}">
+      <iconify-icon icon="heroicons:squares-2x2"></iconify-icon>
+      <span>Browse</span>
+    </a>
+
+    {% if user.is_authenticated %}
+    <a href="/orders/cart/" class="tab-item {% if '/cart/' in request.path %}active{% endif %}" style="position:relative;">
+      <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
+      <span>Cart</span>
+      {% if cart_count %}
+      <span class="tab-badge">{{ cart_count }}</span>
+      {% endif %}
+    </a>
+
+    <a href="/notifications/" class="tab-item {% if '/notifications/' in request.path %}active{% endif %}" style="position:relative;">
+      <iconify-icon icon="heroicons:bell"></iconify-icon>
+      <span>Alerts</span>
+      <span class="tab-badge" x-show="notifCount > 0" x-text="notifCount > 9 ? '9+' : notifCount"></span>
+    </a>
+
+    <a href="/auth/profile/" class="tab-item {% if '/auth/profile/' in request.path %}active{% endif %}">
+      <iconify-icon icon="heroicons:user-circle"></iconify-icon>
+      <span>Account</span>
+    </a>
+
+    {% else %}
+    <a href="/auth/login/" class="tab-item">
+      <iconify-icon icon="heroicons:arrow-right-on-rectangle"></iconify-icon>
+      <span>Sign in</span>
+    </a>
+
+    <a href="/auth/register/" class="tab-item">
+      <iconify-icon icon="heroicons:user-plus"></iconify-icon>
+      <span>Join</span>
+    </a>
+    {% endif %}
+
+  </div>
+</nav>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

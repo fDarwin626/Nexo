@@ -23,10 +23,9 @@
 - **Dispute System** — Buyer opens dispute, seller 48hr response, admin-seller chat, strike ladder, compensation tiers, Flutterwave refund API
 - **Celery Tasks** — Subscription expiry warnings (30d/7d/1d), store auto-expire, seller account cleanup (60 days), product restock deadlines, price drop alerts, POD monthly reset, monthly revenue reset
 - **Notifications** — In-app notification system, unread count API, mark read, mark all read
+- **Reviews & Ratings** — Verified purchase only, photo upload, seller one-reply, auto-calculated product rating_avg and rating_count
 
 ### 📋 Planned
-
-- **Section 12** — Reviews & Ratings
 - **Section 13** — DRF API Layer (Flutter-ready)
 - **Section 14** — Full Frontend UI (Tailwind + Alpine.js + GSAP)
 - **Section 15** — SEO & Legal Pages
