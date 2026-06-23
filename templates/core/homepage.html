@@ -1,35 +1,725 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>NEXO — Nigerian Marketplace</h1>
-    <p>Converge & Sell</p>
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
 
-    <h2>Categories</h2>
-    {% for cat in categories %}
-    <a href="{% url 'core:category' cat.slug %}">{{ cat.name }}</a> |
-    {% endfor %}
+{% block title %}Nexo — Nigerian Marketplace{% endblock %}
+{% block meta_description %}Buy and sell anything in Nigeria. Thousands of verified sellers, one marketplace.{% endblock %}
 
-    <h2>New Arrivals</h2>
-    {% for product in new_arrivals %}
+{% block extra_head %}
+<style>
+/* ── HERO ── */
+.hero {
+  position: relative;
+  min-height: 580px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("{% static 'images/homepage/hero_bg.jpeg' %}");
+  background-size: cover;
+  background-position: center;
+  opacity:1;
+}
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  width: 100%;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+.hero-headline {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+.hero-headline em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 17px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 440px;
+  margin-bottom: 36px;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hero-stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.hero-stat-num {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.hero-visual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.hero-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.hero-card:first-child {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  align-items: center;
+}
+.hero-card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 32px;
+}
+.hero-card-body { padding: 12px; }
+.hero-card-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-card-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* ── TRUST BAR ── */
+.trust-bar {
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.trust-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.trust-item iconify-icon {
+  font-size: 20px;
+  color: var(--accent);
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.section-link {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: gap 0.2s;
+}
+.section-link:hover { gap: 8px; }
+
+/* ── CATEGORIES GRID ── */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.category-card:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+.category-card:hover iconify-icon { color: var(--accent); }
+.category-card iconify-icon { font-size: 28px; color: var(--text-muted); transition: color 0.2s; }
+.category-card span {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ── PRODUCT CARDS ── */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.product-card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 48px;
+  position: relative;
+}
+.product-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.badge-new { background: var(--text); color: var(--bg); }
+.badge-sale { background: var(--accent); color: #FAF7F5; }
+.product-card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+.product-card-seller {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.product-card-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.product-card-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+.product-card-price-old {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  display: block;
+}
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.product-card-rating iconify-icon { font-size: 13px; color: #F59E0B; }
+
+/* ── FLASH SALE BANNER ── */
+.flash-banner {
+  background: var(--text);
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+[data-theme="dark"] .flash-banner { background: var(--surface); border: 1px solid var(--border); }
+.flash-banner-left { display: flex; align-items: center; gap: 16px; }
+.flash-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flash-icon iconify-icon { font-size: 24px; color: #FAF7F5; }
+.flash-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--bg);
+  letter-spacing: -0.01em;
+}
+[data-theme="dark"] .flash-title { color: var(--text); }
+.flash-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: rgba(250,247,245,0.6);
+  margin-top: 2px;
+}
+[data-theme="dark"] .flash-sub { color: var(--text-muted); }
+
+/* ── SECTION PADDING ── */
+.section { padding: 60px 0; }
+.section + .section { padding-top: 0; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 32px; padding: 40px 16px; }
+  .hero-visual { display: none; }
+  .hero-stats { gap: 20px; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .categories-grid { grid-template-columns: repeat(4, 1fr); }
+  .flash-banner { flex-direction: column; align-items: flex-start; padding: 24px; }
+  .trust-bar-inner { justify-content: center; }
+  .section { padding: 40px 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── HERO ── #}
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
     <div>
-        <a href="{% url 'products:detail' product.slug %}">
-            {{ product.name }} — ₦{{ product.effective_price }}
+      <div class="hero-tag">
+        <iconify-icon icon="mdi:nigeria"></iconify-icon>
+        Nigerian Marketplace
+      </div>
+      <h1 class="hero-headline">
+        Converge<br>
+        &amp; <em>Sell.</em>
+      </h1>
+      <p class="hero-sub">
+        Thousands of verified sellers. One marketplace built for Nigeria. Buy anything, sell anything — all in one place.
+      </p>
+      <div class="hero-actions">
+        <a href="/marketplace/" class="btn-primary" style="padding:14px 28px;font-size:15px;">
+          Shop now
+          <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
         </a>
-        — {{ product.seller.store_name }}
+        {% if not user.is_authenticated %}
+        <a href="/auth/register/" class="btn-ghost" style="padding:13px 28px;font-size:15px;">
+          Join free
+        </a>
+        {% endif %}
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">10K+</div>
+          <div class="hero-stat-label">Products listed</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">500+</div>
+          <div class="hero-stat-label">Verified sellers</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">36</div>
+          <div class="hero-stat-label">States covered</div>
+        </div>
+      </div>
     </div>
-    {% empty %}
-    <p>No products yet.</p>
-    {% endfor %}
 
-    <h2>Flash Sales</h2>
-    {% for product in flash_sales %}
-    <div>
-        <a href="{% url 'products:detail' product.slug %}">
-            {{ product.name }} — ₦{{ product.flash_sale_price }}
+    {# Hero product cards — shows first 3 new arrivals #}
+    <div class="hero-visual">
+      {% for product in new_arrivals|slice:":3" %}
+        {% with primary_img=product.images.all|first %}
+        {% if forloop.first %}
+        <a href="{% url 'products:detail' product.slug %}" class="hero-card">
+          <div style="width:80px;height:80px;border-radius:10px;background:var(--surface-alt);overflow:hidden;flex-shrink:0;">
+            {% if primary_img %}
+            <img src="{{ primary_img.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+              <iconify-icon icon="heroicons:photo" style="font-size:28px;color:var(--text-muted);"></iconify-icon>
+            </div>
+            {% endif %}
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);font-family:'Satoshi',sans-serif;margin-bottom:4px;">{{ product.seller.store_name }}</div>
+            <div class="hero-card-name" style="font-size:14px;max-width:none;">{{ product.name }}</div>
+            <div class="hero-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</div>
+          </div>
         </a>
+        {% else %}
+        <a href="{% url 'products:detail' product.slug %}" class="hero-card" style="display:flex;flex-direction:column;">
+          <div style="aspect-ratio:1;background:var(--surface-alt);overflow:hidden;">
+            {% if primary_img %}
+            <img src="{{ primary_img.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+              <iconify-icon icon="heroicons:photo" style="font-size:28px;color:var(--text-muted);"></iconify-icon>
+            </div>
+            {% endif %}
+          </div>
+          <div class="hero-card-body">
+            <div class="hero-card-name">{{ product.name }}</div>
+            <div class="hero-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</div>
+          </div>
+        </a>
+        {% endif %}
+        {% endwith %}
+      {% empty %}
+        <div class="hero-card" style="grid-column:1/-1;padding:32px;display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;color:var(--text-muted);">
+            <iconify-icon icon="heroicons:shopping-bag" style="font-size:40px;"></iconify-icon>
+            <p style="font-family:'Satoshi',sans-serif;font-size:14px;margin-top:8px;">Products coming soon</p>
+          </div>
+        </div>
+      {% endfor %}
     </div>
-    {% empty %}
-    <p>No flash sales right now.</p>
-    {% endfor %}
-</body>
-</html>
+  </div>
+</section>
+
+{# ── TRUST BAR ── #}
+<div class="trust-bar">
+  <div class="trust-bar-inner">
+    <div class="trust-item">
+      <iconify-icon icon="heroicons:shield-check"></iconify-icon>
+      Verified sellers only
+    </div>
+    <div class="trust-item">
+      <iconify-icon icon="heroicons:credit-card"></iconify-icon>
+      Secure Flutterwave payments
+    </div>
+    <div class="trust-item">
+      <iconify-icon icon="heroicons:truck"></iconify-icon>
+      Same-state delivery
+    </div>
+    <div class="trust-item">
+      <iconify-icon icon="heroicons:arrow-uturn-left"></iconify-icon>
+      Buyer protection
+    </div>
+    <div class="trust-item">
+      <iconify-icon icon="heroicons:chat-bubble-left-ellipsis"></iconify-icon>
+      24/7 dispute support
+    </div>
+  </div>
+</div>
+
+{# ── CATEGORIES ── #}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Browse by category</h2>
+      <a href="/marketplace/" class="section-link">
+        All categories
+        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+    </div>
+    <div class="categories-grid">
+      {% for cat in categories %}
+      <a href="{% url 'core:category' cat.slug %}" class="category-card">
+        <iconify-icon icon="{{ cat.icon|default:'mdi:tag' }}"></iconify-icon>
+        <span>{{ cat.name }}</span>
+      </a>
+      {% empty %}
+      <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);grid-column:1/-1;">
+        No categories yet.
+      </p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ── FLASH SALES ── #}
+{% if flash_sales %}
+<section class="section">
+  <div class="container">
+    <div class="flash-banner">
+      <div class="flash-banner-left">
+        <div class="flash-icon">
+          <iconify-icon icon="heroicons:bolt"></iconify-icon>
+        </div>
+        <div>
+          <div class="flash-title">Flash Sales</div>
+          <div class="flash-sub">Limited time — grab them before they're gone</div>
+        </div>
+      </div>
+      <a href="/marketplace/?sort=flash_sale" class="btn-primary" style="flex-shrink:0;">
+        View all deals
+        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+    </div>
+
+    <div class="products-grid">
+      {% for product in flash_sales %}
+      <a href="{% url 'products:detail' product.slug %}" class="product-card">
+        <div class="product-card-img">
+          {% with primary=product.images.all|first %}
+          {% if primary %}
+          <img src="{{ primary.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+          <iconify-icon icon="heroicons:photo"></iconify-icon>
+          {% endif %}
+          {% endwith %}
+          <span class="product-card-badge badge-sale">SALE</span>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-seller">{{ product.seller.store_name }}</div>
+          <div class="product-card-name">{{ product.name }}</div>
+          <div class="product-card-footer">
+            <div>
+              <span class="product-card-price-old">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+              <span class="product-card-price" style="color:var(--accent);">₦{{ product.flash_sale_price|floatformat:0|intcomma }}</span>
+            </div>
+            {% if product.rating_count > 0 %}
+            <div class="product-card-rating">
+              <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+              {{ product.rating_avg|floatformat:1 }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+</div>
+  </div>
+</section>
+{% endif %}
+
+{# ── NEW ARRIVALS ── #}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">New arrivals</h2>
+      <a href="/marketplace/" class="section-link">
+        See all
+        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+    </div>
+    <div class="products-grid">
+      {% for product in new_arrivals %}
+      <a href="{% url 'products:detail' product.slug %}" class="product-card">
+        <div class="product-card-img">
+          {% with primary=product.images.all|first %}
+          {% if primary %}
+          <img src="{{ primary.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+          <iconify-icon icon="heroicons:photo"></iconify-icon>
+          {% endif %}
+          {% endwith %}
+          <span class="product-card-badge badge-new">NEW</span>
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-seller">{{ product.seller.store_name }}</div>
+          <div class="product-card-name">{{ product.name }}</div>
+          <div class="product-card-footer">
+            <span class="product-card-price">
+              {% if product.discount_percent > 0 %}
+              <span class="product-card-price-old">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+              {% endif %}
+              ₦{{ product.effective_price|floatformat:0|intcomma }}
+            </span>
+            {% if product.rating_count > 0 %}
+            <div class="product-card-rating">
+              <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+              {{ product.rating_avg|floatformat:1 }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ── BECOME A SELLER CTA ── #}
+{% if not user.is_authenticated or user.role == 'buyer' %}
+<section class="section">
+  <div class="container">
+    <div style="
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 56px 48px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 40px;
+      align-items: center;
+    ">
+      <div>
+        <p style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">For sellers</p>
+        <h2 style="font-family:'Clash Display',sans-serif;font-size:36px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:14px;line-height:1.1;">
+          Your store.<br>Your customers.
+        </h2>
+        <p style="font-family:'Satoshi',sans-serif;font-size:16px;color:var(--text-muted);line-height:1.6;max-width:480px;">
+          Start selling in minutes. Set up your storefront, list products, and get paid directly via Flutterwave. No hidden fees on your first ₦500k.
+        </p>
+        <div style="display:flex;align-items:center;gap:24px;margin-top:28px;flex-wrap:wrap;">
+          <a href="{% if user.is_authenticated %}/store/become-seller/{% else %}/auth/register/{% endif %}" class="btn-primary" style="padding:14px 28px;font-size:15px;">
+            Open your store
+            <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+          </a>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+              <iconify-icon icon="heroicons:check-circle" style="color:var(--success);font-size:16px;"></iconify-icon>
+              0% commission up to ₦500k/month
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+              <iconify-icon icon="heroicons:check-circle" style="color:var(--success);font-size:16px;"></iconify-icon>
+              Direct payouts via Flutterwave
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+              <iconify-icon icon="heroicons:check-circle" style="color:var(--success);font-size:16px;"></iconify-icon>
+              Your own storefront URL
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;" class="hide-mobile">
+        <div style="width:120px;height:120px;background:var(--accent-soft);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+          <iconify-icon icon="heroicons:building-storefront" style="font-size:56px;color:var(--accent);"></iconify-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.from('.hero-headline', { opacity: 0, y: 30, duration: 0.7, ease: 'power2.out' });
+  gsap.from('.hero-sub', { opacity: 0, y: 20, duration: 0.7, delay: 0.15, ease: 'power2.out' });
+  gsap.from('.hero-actions', { opacity: 0, y: 20, duration: 0.7, delay: 0.25, ease: 'power2.out' });
+  gsap.from('.hero-stats', { opacity: 0, y: 20, duration: 0.7, delay: 0.35, ease: 'power2.out' });
+  gsap.from('.hero-card', { opacity: 0, y: 20, duration: 0.5, stagger: 0.1, delay: 0.2, ease: 'power2.out' });
+
+  gsap.utils.toArray('.product-card').forEach((card) => {
+    gsap.from(card, {
+      scrollTrigger: { trigger: card, start: 'top 90%' },
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      ease: 'power2.out'
+    });
+  });
+</script>
+{% endblock %}

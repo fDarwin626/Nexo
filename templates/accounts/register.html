@@ -1,19 +1,410 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Create Account</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-    </form>
-    <a href="{% url 'accounts:login' %}">Already have an account?</a>
+{% extends "base/base.html" %}
+{% load static %}
+{% load socialaccount %}
 
-    <hr>
-    <p>Or sign up with:</p>
-    {% load socialaccount %}
-    <a href="{% provider_login_url 'google' %}">
+{% block title %}Create account — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+#navbar, #mobile-tabbar, #mobile-search, footer { display: none !important; }
+.page-content { padding-top: 0 !important; }
+
+.auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+.auth-left {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #1C0F0A;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px;
+}
+.auth-left-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("{% static 'images/side-view-stoic-handsome-man.jpg' %}");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.6;
+}
+.auth-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(28,15,10,0.95) 0%, rgba(28,15,10,0.3) 60%, rgba(28,15,10,0.05) 100%);
+  z-index: 1;
+}
+.auth-left-content { position: relative; z-index: 2; }
+.auth-left-brand {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #FAF7F5;
+  letter-spacing: -0.02em;
+  position: absolute;
+  top: 48px;
+  left: 48px;
+  z-index: 2;
+  text-decoration: none;
+}
+.auth-left-brand span { color: var(--accent); }
+.auth-left-tag {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.auth-left-headline {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: #FAF7F5;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.auth-left-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  color: rgba(250,247,245,0.65);
+  line-height: 1.6;
+  max-width: 320px;
+}
+.auth-right {
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 56px;
+  min-height: 100vh;
+}
+.auth-form-wrap { width: 100%; max-width: 400px; }
+.auth-greeting {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.auth-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  line-height: 1.1;
+}
+.field-group { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-input-wrap { position: relative; }
+.field-input-wrap > iconify-icon:first-child {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+.auth-input {
+  width: 100%;
+  padding: 13px 44px 13px 42px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.auth-input.has-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+.toggle-pw {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  z-index: 1;
+}
+.toggle-pw:hover { color: var(--text); }
+.field-error {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pw-strength { margin-top: 8px; display: flex; gap: 4px; }
+.pw-bar { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.3s; }
+.pw-bar.weak { background: var(--danger); }
+.pw-bar.medium { background: var(--warning); }
+.pw-bar.strong { background: var(--success); }
+.auth-submit {
+  width: 100%;
+  padding: 14px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-top: 8px;
+}
+.auth-submit:hover { opacity: 0.85; transform: translateY(-1px); }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.auth-divider span { font-size: 12px; color: var(--text-muted); font-family: 'Satoshi', sans-serif; }
+.btn-google {
+  width: 100%;
+  padding: 13px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-google:hover { border-color: var(--accent); background: var(--surface-alt); }
+.auth-footer-link {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'Satoshi', sans-serif;
+}
+.auth-footer-link a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.terms-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Satoshi', sans-serif;
+  text-align: center;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+.terms-note a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .auth-wrap { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+  .auth-right { padding: 32px 24px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <a href="/" class="auth-left-brand">NE<span>X</span>O</a>
+    <div class="auth-left-content">
+      <p class="auth-left-tag">Join the marketplace</p>
+      <h1 class="auth-left-headline">Buy Smart.<br>Sell More.</h1>
+      <p class="auth-left-sub">Create your free account and access thousands of products from verified Nigerian sellers.</p>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+
+      <p class="auth-greeting">New here?</p>
+      <h2 class="auth-title">Create account.</h2>
+
+      {% if form.non_field_errors %}
+      <div style="background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+        <iconify-icon icon="heroicons:exclamation-circle" style="color:#DC2626;font-size:18px;flex-shrink:0;"></iconify-icon>
+        <span style="font-size:13px;color:#991B1B;font-family:'Satoshi',sans-serif;">{{ form.non_field_errors|join:", " }}</span>
+      </div>
+      {% endif %}
+
+      <form method="post" x-data="{
+        showPw: false,
+        showPw2: false,
+        pw: '',
+        pwStrength() {
+          if (this.pw.length === 0) return 0;
+          if (this.pw.length < 6) return 1;
+          if (this.pw.length < 10) return 2;
+          return 3;
+        }
+      }">
+        {% csrf_token %}
+
+        <div class="field-group">
+          <label class="field-label" for="id_full_name">Full name</label>
+          <div class="field-input-wrap">
+            <iconify-icon icon="heroicons:user"></iconify-icon>
+            <input
+              type="text"
+              name="full_name"
+              id="id_full_name"
+              class="auth-input {% if form.full_name.errors %}has-error{% endif %}"
+              placeholder="Your full name"
+              value="{{ form.full_name.value|default:'' }}"
+              autocomplete="name"
+              required
+            />
+          </div>
+          {% if form.full_name.errors %}
+          <p class="field-error"><iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>{{ form.full_name.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_email">Email</label>
+          <div class="field-input-wrap">
+            <iconify-icon icon="heroicons:envelope"></iconify-icon>
+            <input
+              type="email"
+              name="email"
+              id="id_email"
+              class="auth-input {% if form.email.errors %}has-error{% endif %}"
+              placeholder="you@email.com"
+              value="{{ form.email.value|default:'' }}"
+              autocomplete="email"
+              required
+            />
+          </div>
+          {% if form.email.errors %}
+          <p class="field-error"><iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>{{ form.email.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_password1">Password</label>
+          <div class="field-input-wrap">
+            <iconify-icon icon="heroicons:lock-closed"></iconify-icon>
+            <input
+              :type="showPw ? 'text' : 'password'"
+              name="password1"
+              id="id_password1"
+              class="auth-input {% if form.password1.errors %}has-error{% endif %}"
+              placeholder="Min. 8 characters"
+              x-model="pw"
+              autocomplete="new-password"
+              required
+            />
+            <button type="button" class="toggle-pw" @click="showPw = !showPw">
+              <iconify-icon x-show="!showPw" icon="heroicons:eye"></iconify-icon>
+              <iconify-icon x-show="showPw" icon="heroicons:eye-slash"></iconify-icon>
+            </button>
+          </div>
+          <div class="pw-strength" x-show="pw.length > 0">
+            <div class="pw-bar" :class="pwStrength() >= 1 ? 'weak' : ''"></div>
+            <div class="pw-bar" :class="pwStrength() >= 2 ? 'medium' : ''"></div>
+            <div class="pw-bar" :class="pwStrength() >= 3 ? 'strong' : ''"></div>
+          </div>
+          {% if form.password1.errors %}
+          <p class="field-error"><iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>{{ form.password1.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_password2">Confirm password</label>
+          <div class="field-input-wrap">
+            <iconify-icon icon="heroicons:lock-closed"></iconify-icon>
+            <input
+              :type="showPw2 ? 'text' : 'password'"
+              name="password2"
+              id="id_password2"
+              class="auth-input {% if form.password2.errors %}has-error{% endif %}"
+              placeholder="Repeat your password"
+              autocomplete="new-password"
+              required
+            />
+            <button type="button" class="toggle-pw" @click="showPw2 = !showPw2">
+              <iconify-icon x-show="!showPw2" icon="heroicons:eye"></iconify-icon>
+              <iconify-icon x-show="showPw2" icon="heroicons:eye-slash"></iconify-icon>
+            </button>
+          </div>
+          {% if form.password2.errors %}
+          <p class="field-error"><iconify-icon icon="heroicons:exclamation-circle"></iconify-icon>{{ form.password2.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="auth-submit">Create account</button>
+
+        <p class="terms-note">
+          By creating an account you agree to our
+          <a href="/terms/">Terms of Service</a> and <a href="/privacy/">Privacy Policy</a>.
+        </p>
+
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <a href="{% provider_login_url 'google' %}" class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
         Continue with Google
-    </a>
-</body>
-</html>
+      </a>
+
+      <p class="auth-footer-link">
+        Already have an account? <a href="{% url 'accounts:login' %}">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -559,7 +559,9 @@
 >
 
 {# ── NAVBAR ──────────────────────────────────────────────────── #}
-<nav id="navbar" :class="{ 'hidden-up': navHidden }">
+{% if not block.super %}{% endif %}
+{% block hide_nav %}{% endblock %}
+<nav id="navbar" :class="{ 'hidden-up': navHidden }" {% if block.hide_nav %}style="display:none"{% endif %}>
   <div class="nav-inner">
 
     {# Brand #}
