@@ -214,6 +214,7 @@ def marketplace(request):
         'products': products_page,
         'categories': categories,
         'exchange_rate': exchange_rate,
+        'condition_choices': Product.Condition.choices,
         'current_filters': {
             'category': category_slug,
             'min_price': min_price,
@@ -261,6 +262,8 @@ def category_browse(request, category_slug):
         'products': products_page,
         'exchange_rate': exchange_rate,
         'subcategories': category.subcategories.filter(is_active=True),
+        'condition_choices': Product.Condition.choices,
+        'current_condition': request.GET.get('condition', ''),
     })
 
 

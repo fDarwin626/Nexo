@@ -1,38 +1,577 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Marketplace</h1>
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
 
-    <form method="get">
-        <input type="text" name="q" value="{{ current_filters.q }}" placeholder="Search products...">
-        <button type="submit">Search</button>
+{% block title %}Marketplace — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+.marketplace-wrap {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* ── SIDEBAR ── */
+.filter-sidebar {
+  position: sticky;
+  top: 88px;
+  height: fit-content;
+}
+.filter-section {
+  margin-bottom: 28px;
+}
+.filter-section-title {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+  color: var(--text);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+.filter-option:hover { background: var(--surface-alt); }
+.filter-option.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.filter-option .count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+.price-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.price-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+.price-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.filter-apply-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: opacity 0.2s;
+}
+.filter-apply-btn:hover { opacity: 0.88; }
+.filter-clear {
+  display: block;
+  text-align: center;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-top: 20px;
+  transition: color 0.2s;
+}
+.filter-clear:hover { color: var(--danger); }
+
+/* ── MAIN CONTENT ── */
+.marketplace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.marketplace-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.marketplace-count {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.sort-select {
+  padding: 9px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.sort-select:focus { border-color: var(--accent); }
+
+/* Active filters chips */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.filter-chip iconify-icon { font-size: 14px; cursor: pointer; }
+
+/* Products grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.product-card-img {
+  width: 100%;
+  height: 210px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 40px;
+  position: relative;
+}
+.product-card-img img { width: 100%; height: 100%; object-fit: cover; }
+.product-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.badge-sale { background: var(--accent); color: #FAF7F5; }
+.badge-new { background: var(--text); color: var(--bg); }
+.product-card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+.product-card-seller {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Satoshi', sans-serif;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.product-card-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 36px;
+}
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.product-card-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+.product-card-price-old {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  display: block;
+}
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Satoshi', sans-serif;
+}
+.product-card-rating iconify-icon { font-size: 13px; color: #F59E0B; }
+
+/* Empty state */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+.empty-state iconify-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+.empty-state h3 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.empty-state p {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+.page-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active {
+  background: var(--accent);
+  color: #FAF7F5;
+  border-color: var(--accent);
+}
+.page-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+/* Mobile filter toggle */
+.mobile-filter-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .marketplace-wrap { grid-template-columns: 1fr; }
+  .filter-sidebar {
+    position: static;
+    display: none;
+  }
+  .filter-sidebar.open { display: block; }
+  .mobile-filter-toggle { display: flex; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .product-card-img { height: 180px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1280px;margin:0 auto;padding:24px 24px 0;">
+  {# Search bar #}
+  <form method="get" style="display:flex;gap:10px;margin-bottom:8px;">
+    {% for key, val in current_filters.items %}
+      {% if key != 'q' and val %}
+      <input type="hidden" name="{{ key }}" value="{{ val }}">
+      {% endif %}
+    {% endfor %}
+    <div style="flex:1;position:relative;max-width:600px;">
+      <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px;"></iconify-icon>
+      <input
+        type="search"
+        name="q"
+        value="{{ current_filters.q|default:'' }}"
+        placeholder="Search products, brands, stores..."
+        style="width:100%;padding:12px 16px 12px 42px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;"
+      />
+    </div>
+    <button type="submit" class="btn-primary" style="padding:12px 20px;">
+      Search
+    </button>
+  </form>
+</div>
+
+<div class="marketplace-wrap" x-data="{ filtersOpen: false }">
+
+  {# ── SIDEBAR ── #}
+  <aside class="filter-sidebar" :class="{ 'open': filtersOpen }">
+    <form method="get" id="filter-form">
+      {% if current_filters.q %}
+      <input type="hidden" name="q" value="{{ current_filters.q }}">
+      {% endif %}
+
+      {# Categories #}
+      <div class="filter-section">
+        <div class="filter-section-title">Category</div>
+        <a href="{% url 'core:marketplace' %}" class="filter-option {% if not current_filters.category %}active{% endif %}">
+          All categories
+        </a>
+        {% for cat in categories %}
+        <a href="?category={{ cat.slug }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}"
+           class="filter-option {% if current_filters.category == cat.slug %}active{% endif %}">
+          <iconify-icon icon="{{ cat.icon|default:'mdi:tag' }}" style="font-size:16px;"></iconify-icon>
+          {{ cat.name }}
+        </a>
+        {% if current_filters.category == cat.slug %}
+          {% for sub in cat.subcategories.all %}
+          <a href="?category={{ sub.slug }}{% if current_filters.q %}&q={{ current_filters.q }}{% endif %}"
+             class="filter-option" style="padding-left:28px;">
+            {{ sub.name }}
+          </a>
+          {% endfor %}
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      {# Condition #}
+      <div class="filter-section">
+        <div class="filter-section-title">Condition</div>
+        {% for val, label in condition_choices %}
+        <label class="filter-option" style="cursor:pointer;">
+          <input type="radio" name="condition" value="{{ val }}"
+            {% if current_filters.condition == val %}checked{% endif %}
+            onchange="document.getElementById('filter-form').submit()"
+            style="accent-color:var(--accent);">
+          {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+
+      {# Price range #}
+      <div class="filter-section">
+        <div class="filter-section-title">Price (₦)</div>
+        <div class="price-inputs">
+          <input type="number" name="min_price" class="price-input"
+            placeholder="Min" value="{{ current_filters.min_price|default:'' }}">
+          <input type="number" name="max_price" class="price-input"
+            placeholder="Max" value="{{ current_filters.max_price|default:'' }}">
+        </div>
+        <button type="submit" class="filter-apply-btn">Apply price</button>
+      </div>
+
+      {# Rating #}
+      <div class="filter-section">
+        <div class="filter-section-title">Min rating</div>
+        {% for r in "54321" %}
+        <label class="filter-option" style="cursor:pointer;">
+          <input type="radio" name="rating" value="{{ r }}"
+            {% if current_filters.rating == r %}checked{% endif %}
+            onchange="document.getElementById('filter-form').submit()"
+            style="accent-color:var(--accent);">
+          <iconify-icon icon="heroicons:star-solid" style="font-size:13px;color:#F59E0B;"></iconify-icon>
+          {{ r }}+ stars
+        </label>
+        {% endfor %}
+      </div>
+
     </form>
 
-    <h2>Products</h2>
-    {% for product in products %}
-    <div>
-        <a href="{% url 'products:detail' product.slug %}">
-            {{ product.name }}
-        </a>
-        — ₦{{ product.effective_price }}
-        — {{ product.seller.store_name }}
-        — {{ product.condition }}
-    </div>
-    {% empty %}
-    <p>No products found.</p>
-    {% endfor %}
+    {% if current_filters.category or current_filters.condition or current_filters.min_price or current_filters.max_price or current_filters.rating %}
+    <a href="{% url 'core:marketplace' %}{% if current_filters.q %}?q={{ current_filters.q }}{% endif %}" class="filter-clear">
+      <iconify-icon icon="heroicons:x-circle"></iconify-icon>
+      Clear all filters
+    </a>
+    {% endif %}
+  </aside>
 
-    <!-- Pagination -->
-    {% if products.has_other_pages %}
-    <div>
-        {% if products.has_previous %}
-        <a href="?page={{ products.previous_page_number }}">Previous</a>
-        {% endif %}
-        Page {{ products.number }} of {{ products.paginator.num_pages }}
-        {% if products.has_next %}
-        <a href="?page={{ products.next_page_number }}">Next</a>
-        {% endif %}
+  {# ── MAIN ── #}
+  <div>
+    <div class="marketplace-header">
+      <div>
+        <div class="marketplace-title">
+          {% if current_filters.q %}Results for "{{ current_filters.q }}"
+          {% elif current_filters.category %}{{ current_filters.category|title }}
+          {% else %}All Products{% endif %}
+        </div>
+        <div class="marketplace-count">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }} found</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="mobile-filter-toggle" @click="filtersOpen = !filtersOpen">
+          <iconify-icon icon="heroicons:funnel"></iconify-icon>
+          Filters
+        </button>
+        <select class="sort-select" onchange="window.location.href=this.value">
+          <option value="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort=newest" {% if current_filters.sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort=price_low" {% if current_filters.sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+          <option value="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort=price_high" {% if current_filters.sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+          <option value="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort=top_rated" {% if current_filters.sort == 'top_rated' %}selected{% endif %}>Top Rated</option>
+          <option value="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort=most_reviewed" {% if current_filters.sort == 'most_reviewed' %}selected{% endif %}>Most Reviewed</option>
+        </select>
+      </div>
+    </div>
+
+    {# Active filter chips #}
+    {% if current_filters.category or current_filters.condition or current_filters.min_price or current_filters.max_price %}
+    <div class="active-filters">
+      {% if current_filters.category %}
+      <a href="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}sort={{ current_filters.sort }}" class="filter-chip">
+        {{ current_filters.category }}
+        <iconify-icon icon="heroicons:x-mark"></iconify-icon>
+      </a>
+      {% endif %}
+      {% if current_filters.condition %}
+      <a href="?{% if current_filters.q %}q={{ current_filters.q }}&{% endif %}category={{ current_filters.category }}&sort={{ current_filters.sort }}" class="filter-chip">
+        {{ current_filters.condition|title }}
+        <iconify-icon icon="heroicons:x-mark"></iconify-icon>
+      </a>
+      {% endif %}
+      {% if current_filters.min_price or current_filters.max_price %}
+      <span class="filter-chip">
+        ₦{{ current_filters.min_price|default:'0' }} – ₦{{ current_filters.max_price|default:'∞' }}
+      </span>
+      {% endif %}
     </div>
     {% endif %}
-</body>
-</html>
+
+    {# Products grid #}
+    <div class="products-grid">
+      {% for product in products %}
+      <a href="{% url 'products:detail' product.slug %}" class="product-card">
+        <div class="product-card-img">
+          {% with primary=product.images.all|first %}
+          {% if primary %}
+          <img src="{{ primary.image.url }}" alt="{{ product.name }}">
+          {% else %}
+          <iconify-icon icon="heroicons:photo"></iconify-icon>
+          {% endif %}
+          {% endwith %}
+          {% if product.is_flash_sale %}<span class="product-card-badge badge-sale">SALE</span>{% endif %}
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-seller">{{ product.seller.store_name }}</div>
+          <div class="product-card-name">{{ product.name }}</div>
+          <div class="product-card-footer">
+            <div>
+              {% if product.discount_percent > 0 %}
+              <span class="product-card-price-old">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+              {% endif %}
+              <span class="product-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</span>
+            </div>
+            {% if product.rating_count > 0 %}
+            <div class="product-card-rating">
+              <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+              {{ product.rating_avg|floatformat:1 }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="empty-state">
+        <iconify-icon icon="heroicons:magnifying-glass"></iconify-icon>
+        <h3>No products found</h3>
+        <p>Try adjusting your filters or search terms.</p>
+        <a href="{% url 'core:marketplace' %}" class="btn-primary" style="margin-top:16px;display:inline-flex;">
+          Clear filters
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Pagination #}
+    {% if products.has_other_pages %}
+    <div class="pagination">
+      {% if products.has_previous %}
+      <a href="?page={{ products.previous_page_number }}&{% for k,v in current_filters.items %}{% if v %}{{ k }}={{ v }}&{% endif %}{% endfor %}" class="page-btn">
+        <iconify-icon icon="heroicons:chevron-left"></iconify-icon>
+      </a>
+      {% endif %}
+      {% for num in products.paginator.page_range %}
+        {% if products.number == num %}
+        <span class="page-btn active">{{ num }}</span>
+        {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+        <a href="?page={{ num }}&{% for k,v in current_filters.items %}{% if v %}{{ k }}={{ v }}&{% endif %}{% endfor %}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if products.has_next %}
+      <a href="?page={{ products.next_page_number }}&{% for k,v in current_filters.items %}{% if v %}{{ k }}={{ v }}&{% endif %}{% endfor %}" class="page-btn">
+        <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
