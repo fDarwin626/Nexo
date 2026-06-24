@@ -1,48 +1,457 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Checkout</h1>
-    <form method="post">
-        {% csrf_token %}
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
 
-        <h3>Delivery</h3>
-        <label>Delivery Type:
-            <select name="delivery_type">
-                <option value="door">Door Delivery</option>
-                <option value="pickup">Pickup</option>
+{% block title %}Checkout — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+.checkout-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
+  align-items: start;
+}
+.checkout-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 28px;
+}
+.checkout-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.checkout-section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.checkout-section-title iconify-icon { font-size: 20px; color: var(--accent); }
+.field-group { margin-bottom: 16px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.field-select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.field-select:focus { border-color: var(--accent); }
+.field-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.field-textarea:focus { border-color: var(--accent); }
+
+/* Payment method cards */
+.payment-options { display: flex; flex-direction: column; gap: 10px; }
+.payment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.payment-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.payment-option input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.payment-option-title {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.payment-option-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.pod-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Coupon input */
+.coupon-row {
+  display: flex;
+  gap: 8px;
+}
+.coupon-row input {
+  flex: 1;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s;
+}
+.coupon-row input:focus { border-color: var(--accent); }
+.coupon-apply-btn {
+  padding: 11px 20px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+.coupon-apply-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Order summary sidebar */
+.checkout-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  position: sticky;
+  top: 88px;
+}
+.summary-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.summary-item-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.summary-item-img img { width: 100%; height: 100%; object-fit: cover; }
+.summary-item-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.summary-item-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.summary-totals { margin-top: 14px; }
+.summary-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 6px 0;
+}
+.summary-total-row.grand {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 15px;
+}
+.summary-total-row.grand span:last-child {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+}
+.place-order-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+.place-order-btn:hover { opacity: 0.88; }
+
+@media (max-width: 768px) {
+  .checkout-wrap { grid-template-columns: 1fr; }
+  .checkout-summary { position: static; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-wrap" x-data="{ paymentMethod: 'pay_now', deliveryType: 'door' }">
+
+  <div>
+    <h1 class="checkout-title">Checkout</h1>
+
+    <form method="post" id="checkout-form">
+      {% csrf_token %}
+
+      {# ── DELIVERY SECTION ── #}
+      <div class="checkout-section">
+        <div class="checkout-section-title">
+          <iconify-icon icon="heroicons:truck"></iconify-icon>
+          Delivery details
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field-group">
+            <label class="field-label">Delivery type</label>
+            <select name="delivery_type" class="field-select" x-model="deliveryType">
+              <option value="door">Door delivery</option>
+              <option value="pickup">Pickup station</option>
             </select>
-        </label>
-
-        <label>State:
-            <select name="delivery_state">
-                <option value="">Select state...</option>
-                {% for state in nigerian_states %}
-                <option value="{{ state }}">{{ state }}</option>
-                {% endfor %}
+          </div>
+          <div class="field-group">
+            <label class="field-label">State</label>
+            <select name="delivery_state" class="field-select" required>
+              <option value="">Select your state...</option>
+              {% for state in nigerian_states %}
+              <option value="{{ state }}">{{ state }}</option>
+              {% endfor %}
             </select>
-        </label>
+          </div>
+        </div>
 
-        <label>Address:
-            <textarea name="delivery_address" placeholder="Full delivery address"></textarea>
-        </label>
+        <div class="field-group">
+          <label class="field-label">City</label>
+          <input type="text" name="delivery_city" class="field-input" placeholder="Your city">
+        </div>
 
-        <h3>Payment Method</h3>
-        <label>
-            <input type="radio" name="payment_method" value="pay_now" checked>
-            Pay Now (Online)
-        </label>
-        <label>
-            <input type="radio" name="payment_method" value="pod">
-            Pay on Delivery
-        </label>
+        <div class="field-group" x-show="deliveryType === 'door'">
+          <label class="field-label">Delivery address</label>
+          <textarea name="delivery_address" class="field-textarea"
+            placeholder="Full address — house number, street, landmark..."></textarea>
+        </div>
 
-        <h3>Coupon</h3>
-        <input type="text" name="coupon_code" placeholder="Enter coupon code">
+        <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:8px;">
+          <iconify-icon icon="heroicons:information-circle" style="font-size:16px;color:var(--accent);flex-shrink:0;margin-top:1px;"></iconify-icon>
+          <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);line-height:1.5;">
+            Delivery is only available within the seller's state and directly bordering states. Your phone number will be shared with the seller for delivery coordination.
+          </span>
+        </div>
+      </div>
 
-        <h3>Order Summary</h3>
-        <p>Subtotal: ₦{{ cart.subtotal }}</p>
+      {# ── PAYMENT METHOD ── #}
+      <div class="checkout-section">
+        <div class="checkout-section-title">
+          <iconify-icon icon="heroicons:credit-card"></iconify-icon>
+          Payment method
+        </div>
+        <div class="payment-options">
 
-        <button type="submit">Place Order</button>
+          <label class="payment-option">
+            <input type="radio" name="payment_method" value="pay_now" x-model="paymentMethod">
+            <div>
+              <div class="payment-option-title">
+                Pay Now
+                <iconify-icon icon="heroicons:shield-check" style="font-size:14px;color:var(--success);margin-left:4px;"></iconify-icon>
+              </div>
+              <div class="payment-option-sub">Card, bank transfer or USSD via Flutterwave. Fully secured and protected.</div>
+            </div>
+          </label>
+
+          <label class="payment-option {% if not pod_available %}pod-locked{% endif %}">
+            <input type="radio" name="payment_method" value="pod"
+              x-model="paymentMethod"
+              {% if not pod_available %}disabled{% endif %}>
+            <div>
+              <div class="payment-option-title">
+                Pay on Delivery
+                {% if not pod_available %}
+                <span style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:600;padding:2px 8px;background:#FEE2E2;color:#991B1B;border-radius:4px;margin-left:6px;">Not available</span>
+                {% endif %}
+              </div>
+              <div class="payment-option-sub">
+                {% if not pod_available %}
+                  {% if pod_reason %}{{ pod_reason }}{% else %}Pay on delivery is not available for this order.{% endif %}
+                {% else %}
+                Pay cash when your order arrives. Limited to {{ pod_limit }} orders per month.
+                {% endif %}
+              </div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      {# ── COUPON ── #}
+      <div class="checkout-section">
+        <div class="checkout-section-title">
+          <iconify-icon icon="heroicons:tag"></iconify-icon>
+          Coupon code
+        </div>
+        {% if applied_coupon %}
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;">
+          <iconify-icon icon="heroicons:check-circle" style="font-size:18px;color:var(--success);"></iconify-icon>
+          <div>
+            <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);">{{ applied_coupon.code }}</span>
+            <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--success);margin-left:8px;">{{ applied_coupon.discount_value|floatformat:0 }}% off applied</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="coupon-row">
+          <input type="text" name="coupon_code" placeholder="Enter coupon code..." autocomplete="off">
+          <button type="submit" name="apply_coupon" value="1" class="coupon-apply-btn">Apply</button>
+        </div>
+        {% if coupon_error %}
+        <p style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--danger);margin-top:6px;">{{ coupon_error }}</p>
+        {% endif %}
+        {% endif %}
+      </div>
+
     </form>
-</body>
-</html>
+  </div>
+
+  {# ── ORDER SUMMARY ── #}
+  <div class="checkout-summary">
+    <div class="summary-title">Order summary</div>
+
+    {% for item in cart.items.all %}
+    <div class="summary-item">
+      <div class="summary-item-img">
+        {% with img=item.sku.product.images.all|first %}
+        {% if img %}<img src="{{ img.image.url }}" alt="{{ item.sku.product.name }}">
+        {% else %}<iconify-icon icon="heroicons:photo" style="font-size:18px;color:var(--text-muted);"></iconify-icon>{% endif %}
+        {% endwith %}
+      </div>
+      <div class="summary-item-name">
+        {{ item.sku.product.name|truncatechars:32 }}
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);">x{{ item.quantity }}</div>
+      </div>
+      <span class="summary-item-price">₦{{ item.line_total|floatformat:0|intcomma }}</span>
+    </div>
+    {% endfor %}
+
+    <div class="summary-totals">
+      <div class="summary-total-row">
+        <span>Subtotal</span>
+        <span style="font-family:'DM Mono',monospace;">₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+      </div>
+      <div class="summary-total-row">
+        <span>Delivery</span>
+        <span>Calculated at payment</span>
+      </div>
+      {% if discount_amount %}
+      <div class="summary-total-row" style="color:var(--success);">
+        <span>Coupon discount</span>
+        <span style="font-family:'DM Mono',monospace;">−₦{{ discount_amount|floatformat:0|intcomma }}</span>
+      </div>
+      {% endif %}
+      <div class="summary-total-row grand">
+        <span>Total</span>
+        <span>₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      form="checkout-form"
+      class="place-order-btn"
+      x-bind:disabled="false"
+    >
+      <iconify-icon :icon="paymentMethod === 'pay_now' ? 'heroicons:credit-card' : 'heroicons:banknotes'"></iconify-icon>
+      <span x-text="paymentMethod === 'pay_now' ? 'Pay now' : 'Place order (Pay on delivery)'">Place order</span>
+    </button>
+
+    <div style="display:flex;align-items:center;gap:6px;margin-top:14px;justify-content:center;">
+      <iconify-icon icon="heroicons:lock-closed" style="font-size:13px;color:var(--text-muted);"></iconify-icon>
+      <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Secured by Flutterwave</span>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

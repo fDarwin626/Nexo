@@ -1,42 +1,65 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>Revenue & Transactions</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Revenue — {{ seller.store_name }}{% endblock %}
+{% block nav_revenue %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Revenue</div>
+    <div class="seller-page-sub">Track your earnings and payouts</div>
+  </div>
+</div>
 
-<h2>Summary</h2>
-<p>All-Time Revenue: ₦{{ total_revenue }}</p>
-<p>This Month Revenue: ₦{{ monthly_revenue }}</p>
-<p>Current Commission Rate: {{ commission_rate }}%</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">All-time revenue</div>
+    <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--text);">₦{{ total_revenue|floatformat:0|intcomma }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">This month</div>
+    <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--accent);">₦{{ monthly_revenue|floatformat:0|intcomma }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Commission rate</div>
+    <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--text);">{{ commission_rate }}%</div>
+    <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">Based on monthly revenue</div>
+  </div>
+</div>
 
-<hr>
-
-<h2>Completed Orders</h2>
-{% if completed_orders %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Order Ref</th>
-        <th>Subtotal</th>
-        <th>Commission</th>
-        <th>Your Payout</th>
-        <th>Date</th>
-    </tr>
-    {% for order in completed_orders %}
-    <tr>
-        <td>{{ order.order.order_ref }}</td>
-        <td>₦{{ order.subtotal }}</td>
-        <td>₦{{ order.commission_amount }} ({{ order.commission_rate }}%)</td>
-        <td>₦{{ order.seller_payout }}</td>
-        <td>{{ order.created_at|date:"d M Y" }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No completed orders yet.</p>
-{% endif %}
-
-</body>
-</html>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Transaction history</div>
+  {% if completed_orders %}
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="background:var(--surface-alt);">
+          <th style="padding:12px 20px;text-align:left;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Order ref</th>
+          <th style="padding:12px 20px;text-align:left;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Subtotal</th>
+          <th style="padding:12px 20px;text-align:left;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Commission</th>
+          <th style="padding:12px 20px;text-align:left;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Your payout</th>
+          <th style="padding:12px 20px;text-align:left;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in completed_orders %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:14px 20px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);">{{ order.order.order_ref }}</td>
+          <td style="padding:14px 20px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);">₦{{ order.subtotal|floatformat:0|intcomma }}</td>
+          <td style="padding:14px 20px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">₦{{ order.commission_amount|floatformat:0|intcomma }} ({{ order.commission_rate }}%)</td>
+          <td style="padding:14px 20px;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--success);">₦{{ order.seller_payout|floatformat:0|intcomma }}</td>
+          <td style="padding:14px 20px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">{{ order.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding:48px;text-align:center;">
+    <iconify-icon icon="heroicons:banknotes" style="font-size:40px;color:var(--text-muted);display:block;margin-bottom:12px;"></iconify-icon>
+    <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">No completed orders yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

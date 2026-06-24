@@ -141,6 +141,13 @@ def seller_register_step2(request):
             profile.user = user
             profile.status = SellerProfile.StoreStatus.PENDING
             profile.save()
+            # Ensure a role is upgraded to seller — covers both the
+            # brand-new-signup path (step1) and the existing-buyer
+            # upgrade path (seller_register_start), which never
+            # touched a role before this point.
+            if user.role != User.Role.SELLER:
+                user.role = User.Role.SELLER
+                user.save(update_fields=['role'])
             # Store profile ID in session
             request.session['seller_registration_profile_id'] = profile.pk
             request.session['seller_registration_step'] = 3
@@ -443,6 +450,14 @@ def store_detail(request, store_slug):
         is_active=True
     ).prefetch_related('images').order_by('-created_at')
 
+    bestsellers = store.products.filter(
+        is_active=True
+    ).prefetch_related('images').order_by('-rating_avg', '-rating_count')[:8]
+
+    new_arrivals = store.products.filter(
+        is_active=True
+    ).prefetch_related('images').order_by('-created_at')[:8]
+
     # Search within store
     q = request.GET.get('q', '').strip()
     if q:
@@ -464,5 +479,7 @@ def store_detail(request, store_slug):
     return render(request, 'stores/storefront.html', {
         'store': store,
         'products': products,
+        'bestsellers': bestsellers,
         'active_coupon': active_coupon,
+        'new_arrivals': new_arrivals,
     })

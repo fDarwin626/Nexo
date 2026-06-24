@@ -1,57 +1,87 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>Subscription</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Subscription — {{ seller.store_name }}{% endblock %}
+{% block nav_subscription %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Subscription</div>
+    <div class="seller-page-sub">Manage your store rental plan</div>
+  </div>
+</div>
 
 {% if active_sub %}
-    <h2>Current Plan: {{ active_sub.get_plan_display }}</h2>
-    <p>Status: {{ active_sub.status }}</p>
-    <p>Start Date: {{ active_sub.start_date }}</p>
-    <p>End Date: {{ active_sub.end_date }}</p>
-    <p>Days Remaining: {{ active_sub.days_remaining }}</p>
-    <p>Urgency: {{ active_sub.urgency_level }}</p>
-    <p>Amount Paid: ₦{{ active_sub.amount_paid }}</p>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:24px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Current plan</div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:6px;">{{ active_sub.get_plan_display }}</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">
+        {{ active_sub.start_date|date:"M d, Y" }} — {{ active_sub.end_date|date:"M d, Y" }}
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Days remaining</div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:48px;font-weight:700;color:{% if active_sub.urgency_level == 'green' %}var(--success){% elif active_sub.urgency_level == 'yellow' %}var(--warning){% else %}var(--danger){% endif %};line-height:1;">{{ active_sub.days_remaining }}</div>
+    </div>
+  </div>
 
-    <br>
-    <a href="{% url 'stores:seller_register_step4' %}">
-        <button>Renew Subscription</button>
-    </a>
+  <div style="margin-top:20px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Subscription progress</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">{{ active_sub.days_remaining }} days left</span>
+    </div>
+    <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+      <div style="height:100%;border-radius:4px;background:{% if active_sub.urgency_level == 'green' %}var(--success){% elif active_sub.urgency_level == 'yellow' %}var(--warning){% else %}var(--danger){% endif %};transition:width 0.3s;width:{% if active_sub.urgency_level == 'green' %}80{% elif active_sub.urgency_level == 'yellow' %}40{% else %}10{% endif %}%;"></div>
+    </div>
+  </div>
+
+  {% if active_sub.urgency_level != 'green' %}
+  <div style="margin-top:16px;padding:12px 16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;display:flex;align-items:center;gap:8px;">
+    <iconify-icon icon="heroicons:exclamation-triangle" style="font-size:16px;color:var(--warning);flex-shrink:0;"></iconify-icon>
+    <span style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);">Your subscription is expiring soon. Renew now to keep your store live.</span>
+  </div>
+  {% endif %}
+
+  <a href="/store/register/step4/" class="btn-primary" style="display:inline-flex;margin-top:20px;padding:12px 24px;">
+    <iconify-icon icon="heroicons:arrow-path"></iconify-icon>
+    Renew subscription
+  </a>
+</div>
 {% else %}
-    <p style="color:red;">No active subscription.</p>
-    <a href="{% url 'stores:seller_register_step4' %}">
-        <button>Subscribe Now</button>
-    </a>
+<div style="text-align:center;padding:60px;background:var(--surface);border:1px solid var(--danger);border-radius:14px;margin-bottom:24px;">
+  <iconify-icon icon="heroicons:exclamation-circle" style="font-size:48px;color:var(--danger);display:block;margin-bottom:16px;"></iconify-icon>
+  <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">No active subscription</div>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">Your store is currently offline. Subscribe to go live.</p>
+  <a href="/store/register/step4/" class="btn-primary">Subscribe now</a>
+</div>
 {% endif %}
 
-<hr>
-
-<h2>Subscription History</h2>
-{% if all_subs %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Plan</th>
-        <th>Amount Paid</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Status</th>
-    </tr>
-    {% for sub in all_subs %}
-    <tr>
-        <td>{{ sub.get_plan_display }}</td>
-        <td>₦{{ sub.amount_paid }}</td>
-        <td>{{ sub.start_date }}</td>
-        <td>{{ sub.end_date }}</td>
-        <td>{{ sub.status }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No subscription history.</p>
-{% endif %}
-
-</body>
-</html>
+{# History #}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Subscription history</div>
+  {% if all_subs %}
+  {% for sub in all_subs %}
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
+    <div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--text);">{{ sub.get_plan_display }}</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ sub.start_date|date:"M d, Y" }} — {{ sub.end_date|date:"M d, Y" }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--text);">₦{{ sub.amount_paid|floatformat:0|intcomma }}</span>
+      <span style="padding:3px 10px;border-radius:10px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;
+        {% if sub.status == 'active' %}background:#DCFCE7;color:#166534;{% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+        {{ sub.get_status_display }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="padding:32px;text-align:center;">
+    <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">No subscription history.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

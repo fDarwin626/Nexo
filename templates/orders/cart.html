@@ -1,34 +1,335 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Your Cart ({{ cart.total_items }} items)</h1>
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Your Cart — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+.cart-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  align-items: start;
+}
+.cart-main-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+.seller-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.seller-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+.seller-group-header iconify-icon { font-size: 16px; color: var(--text-muted); }
+.seller-group-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+.cart-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.cart-item:last-child { border-bottom: none; }
+.cart-item-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cart-item-img img { width: 100%; height: 100%; object-fit: cover; }
+.cart-item-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.cart-item-variant {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.cart-qty-control {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+.cart-qty-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-alt);
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text);
+  transition: background 0.15s;
+  font-family: 'Satoshi', sans-serif;
+}
+.cart-qty-btn:hover { background: var(--border); }
+.cart-qty-num {
+  width: 36px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  border-left: 1.5px solid var(--border);
+  border-right: 1.5px solid var(--border);
+}
+.cart-item-price {
+  text-align: right;
+}
+.cart-item-total {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.cart-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 0;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+}
+.cart-remove-btn:hover { color: var(--danger); }
+
+/* Summary card */
+.cart-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  position: sticky;
+  top: 88px;
+}
+.summary-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+}
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.summary-row:last-of-type { border-bottom: none; }
+.summary-row.total {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  margin-top: 4px;
+}
+.summary-row.total span:first-child {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 15px;
+}
+.summary-row.total span:last-child {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+}
+.checkout-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.checkout-btn:hover { opacity: 0.85; }
+
+@media (max-width: 768px) {
+  .cart-wrap { grid-template-columns: 1fr; }
+  .cart-summary { position: static; }
+  .cart-item { grid-template-columns: 60px 1fr; }
+  .cart-item-price { grid-column: 2; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cart-wrap">
+
+  <div>
+    <h1 class="cart-main-title">
+      Cart
+      <span style="font-family:'Satoshi',sans-serif;font-size:16px;font-weight:400;color:var(--text-muted);">{{ cart.total_items }} item{{ cart.total_items|pluralize }}</span>
+    </h1>
 
     {% if items %}
     {% for seller, seller_items in items_by_seller.items %}
-    <div>
-        <h3>{{ seller.store_name }}</h3>
-        {% for item in seller_items %}
-        <div>
-            {{ item.sku.product.name }}
-            — {{ item.sku.sku_code }}
-            — Qty: {{ item.quantity }}
-            — ₦{{ item.line_total }}
-            <form method="post" action="{% url 'orders:cart_remove' item.pk %}">
-                {% csrf_token %}
-                <button type="submit">Remove</button>
-            </form>
+    <div class="seller-group">
+      <div class="seller-group-header">
+        <iconify-icon icon="heroicons:building-storefront"></iconify-icon>
+        <span class="seller-group-name">{{ seller.store_name }}</span>
+        {% if seller.logo %}
+        <img src="{{ seller.logo.url }}" alt="{{ seller.store_name }}" style="width:20px;height:20px;border-radius:4px;object-fit:cover;margin-left:auto;">
+        {% endif %}
+      </div>
+
+      {% for item in seller_items %}
+      <div class="cart-item">
+        <div class="cart-item-img">
+          {% with img=item.sku.product.images.all|first %}
+          {% if img %}
+          <img src="{{ img.image.url }}" alt="{{ item.sku.product.name }}">
+          {% else %}
+          <iconify-icon icon="heroicons:photo" style="font-size:24px;color:var(--text-muted);"></iconify-icon>
+          {% endif %}
+          {% endwith %}
         </div>
-        {% endfor %}
+
+        <div>
+          <div class="cart-item-name">
+            <a href="/products/{{ item.sku.product.slug }}/" style="color:var(--text);text-decoration:none;">{{ item.sku.product.name }}</a>
+          </div>
+          {% if item.sku.variant_options.all %}
+          <div class="cart-item-variant">
+            {% for opt in item.sku.variant_options.all %}{{ opt.variant_type.name }}: {{ opt.value }}{% if not forloop.last %} · {% endif %}{% endfor %}
+          </div>
+          {% endif %}
+          <div class="cart-qty-control">
+            <form method="post" action="/orders/cart/update/{{ item.pk }}/" style="display:contents;">
+              {% csrf_token %}
+              <input type="hidden" name="quantity" value="{{ item.quantity|add:'-1' }}">
+              <button type="submit" class="cart-qty-btn">−</button>
+            </form>
+            <div class="cart-qty-num">{{ item.quantity }}</div>
+            <form method="post" action="/orders/cart/update/{{ item.pk }}/" style="display:contents;">
+              {% csrf_token %}
+              <input type="hidden" name="quantity" value="{{ item.quantity|add:'1' }}">
+              <button type="submit" class="cart-qty-btn">+</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="cart-item-price">
+          <div class="cart-item-total">₦{{ item.line_total|floatformat:0|intcomma }}</div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:6px;">₦{{ item.price_snapshot|floatformat:0|intcomma }} each</div>
+          <form method="post" action="/orders/cart/remove/{{ item.pk }}/">
+            {% csrf_token %}
+            <button type="submit" class="cart-remove-btn">
+              <iconify-icon icon="heroicons:trash"></iconify-icon>
+              Remove
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
     </div>
     {% endfor %}
 
-    <h3>Subtotal: ₦{{ cart.subtotal }}</h3>
-    <a href="{% url 'orders:checkout' %}">
-        <button>Proceed to Checkout</button>
+    <a href="/marketplace/" style="display:inline-flex;align-items:center;gap:6px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;margin-top:8px;">
+      <iconify-icon icon="heroicons:arrow-left"></iconify-icon>
+      Continue shopping
     </a>
+
     {% else %}
-    <p>Your cart is empty.</p>
-    <a href="/">Continue Shopping</a>
+    <div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+      <iconify-icon icon="heroicons:shopping-bag" style="font-size:56px;color:var(--text-muted);display:block;margin-bottom:16px;"></iconify-icon>
+      <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">Your cart is empty</div>
+      <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">Browse the marketplace and add items to your cart.</p>
+      <a href="/marketplace/" class="btn-primary">Browse marketplace</a>
+    </div>
     {% endif %}
-</body>
-</html>
+  </div>
+
+  {# Summary #}
+  {% if items %}
+  <div class="cart-summary">
+    <div class="summary-title">Order summary</div>
+    <div class="summary-row">
+      <span>Subtotal ({{ cart.total_items }} items)</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--text);">₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+    </div>
+    <div class="summary-row">
+      <span>Delivery</span>
+      <span style="color:var(--text-muted);">Calculated at checkout</span>
+    </div>
+    <div class="summary-row total">
+      <span>Estimated total</span>
+      <span>₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+    </div>
+    <a href="/orders/checkout/" class="checkout-btn">
+      Checkout
+      <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+    </a>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:14px;justify-content:center;">
+      <iconify-icon icon="heroicons:shield-check" style="font-size:14px;color:var(--success);"></iconify-icon>
+      <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Secured by Flutterwave</span>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

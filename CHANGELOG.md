@@ -24,10 +24,13 @@
 - **Celery Tasks** — Subscription expiry warnings (30d/7d/1d), store auto-expire, seller account cleanup (60 days), product restock deadlines, price drop alerts, POD monthly reset, monthly revenue reset
 - **Notifications** — In-app notification system, unread count API, mark read, mark all read
 - **Reviews & Ratings** — Verified purchase only, photo upload, seller one-reply, auto-calculated product rating_avg and rating_count
-- - **Subcategory System** — sellers add subcategories on product creation, auto-saved globally, admin controls top-level categories and icons
+- **Subcategory System** — sellers add subcategories on product creation, auto-saved globally, admin controls top-level categories and icons
 - **Homepage Deals** — platform coupon hero card, horizontal seller deals strip
 - **Marketplace UI** — filter sidebar, sort, active filter chips, pagination, mobile responsive
 - **Category Pages** — hero with icon, subcategory tabs, sibling tabs, filter sidebar
+- **Seller Dashboard** — full sidebar UI named after store, overview stats, storefront builder
+- **Storefront Builder** — admin header image gallery, live preview, store name 3-month lock, banner editor
+- **StorefrontImage model** — admin uploads header images, sellers pick from gallery
 
 ### 📋 Planned
 - **Section 13** — DRF API Layer (Flutter-ready)

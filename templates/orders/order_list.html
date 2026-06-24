@@ -1,18 +1,46 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>My Orders</h1>
+{% extends "base/base.html" %}
+{% load humanize %}
+
+{% block title %}My Orders — Nexo{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:40px 24px;">
+  <h1 style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:28px;">My Orders</h1>
+
+  {% if orders %}
+  <div style="display:flex;flex-direction:column;gap:12px;">
     {% for order in orders %}
-    <div>
-        <a href="{% url 'orders:order_detail' order.order_ref %}">
-            {{ order.order_ref }}
-        </a>
-        — {{ order.payment_status }}
-        — ₦{{ order.total_amount }}
-        — {{ order.created_at|date:"M d, Y" }}
-    </div>
-    {% empty %}
-    <p>No orders yet.</p>
+    <a href="/orders/{{ order.order_ref }}/" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-decoration:none;color:var(--text);display:block;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px;">{{ order.order_ref }}</div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+            {{ order.created_at|date:"M d, Y" }} ·
+            {{ order.seller_orders.count }} seller{{ order.seller_orders.count|pluralize }}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--text);">₦{{ order.total_amount|floatformat:0|intcomma }}</span>
+          <span style="padding:4px 12px;border-radius:20px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;
+            {% if order.payment_status == 'confirmed' %}background:#DCFCE7;color:#166534;
+            {% elif order.payment_status == 'pending' %}background:#FEF3C7;color:#92400E;
+            {% elif order.payment_status == 'refunded' %}background:#DBEAFE;color:#1E40AF;
+            {% elif order.payment_status == 'failed' %}background:#FEE2E2;color:#991B1B;
+            {% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+            {{ order.get_payment_status_display }}
+          </span>
+        </div>
+      </div>
+    </a>
     {% endfor %}
-</body>
-</html>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+    <iconify-icon icon="heroicons:shopping-bag" style="font-size:56px;color:var(--text-muted);display:block;margin-bottom:16px;"></iconify-icon>
+    <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px;">No orders yet</div>
+    <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">When you place orders they'll appear here.</p>
+    <a href="/marketplace/" class="btn-primary">Start shopping</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

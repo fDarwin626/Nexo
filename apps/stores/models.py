@@ -98,6 +98,45 @@ class SellerProfile(models.Model):
         help_text='Nigerian number with country code eg 2348012345678'
     )
 
+    class HeroLayoutStyle(models.TextChoices):
+        SPLIT = 'split', 'Split (image one side, text other)'
+        OVERLAY = 'overlay', 'Overlay (text on full image)'
+
+    hero_layout_style = models.CharField(
+        max_length=8,
+        choices=HeroLayoutStyle.choices,
+        default=HeroLayoutStyle.SPLIT,
+        help_text='Split = image beside text like default template. Overlay = text floats on full-width image.'
+    )
+
+    class HeroAlign(models.TextChoices):
+        LEFT = 'left', 'Left'
+        CENTER = 'center', 'Center'
+        RIGHT = 'right', 'Right'
+
+    hero_text_align = models.CharField(
+        max_length=6,
+        choices=HeroAlign.choices,
+        default=HeroAlign.LEFT,
+        help_text='In split layout, controls which side text sits on. In overlay, controls text alignment within the image.'
+    )
+
+    hero_headline = models.CharField(max_length=80, blank=True, help_text='Big bold headline eg NEW SEASON NEW STYLE')
+    hero_subtext = models.CharField(max_length=160, blank=True, help_text='Short paragraph under headline')
+    hero_cta_text = models.CharField(max_length=30, blank=True, default='Shop Now', help_text='Button text on hero')
+
+    show_bestsellers = models.BooleanField(default=True)
+    bestsellers_label = models.CharField(max_length=40, blank=True, default='Bestsellers')
+
+    show_promo_banner = models.BooleanField(default=True)
+    promo_banner_text = models.CharField(max_length=80, blank=True, help_text='eg UP TO 40% OFF ON SELECTED ITEMS')
+    promo_banner_bg = models.CharField(max_length=7, default='#1C0F0A')
+
+    show_new_arrivals = models.BooleanField(default=True)
+    new_arrivals_label = models.CharField(max_length=40, blank=True, default='New Arrivals')
+
+    show_newsletter = models.BooleanField(default=False)
+
     # ── BUSINESS VERIFICATION ────────────────────────────────
     account_type = models.CharField(
         max_length=10,

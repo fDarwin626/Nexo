@@ -334,6 +334,7 @@ def product_detail(request, product_slug):
 
     # Build SKU map for Alpine.js variant selector
     sku_map = {}
+
     for sku in skus:
         option_ids = sorted([opt.pk for opt in sku.variant_options.all()])
         key = '-'.join(str(i) for i in option_ids)

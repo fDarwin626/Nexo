@@ -1,75 +1,97 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>My Orders</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Orders — {{ seller.store_name }}{% endblock %}
+{% block nav_orders %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Orders</div>
+    <div class="seller-page-sub">Manage and fulfil your orders</div>
+  </div>
+</div>
 
-<form method="get">
-    <select name="status">
-        <option value="">All Statuses</option>
-        {% for value, label in status_choices %}
-        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-    </select>
-    <button type="submit">Filter</button>
+<form method="get" style="margin-bottom:20px;">
+  <select name="status" onchange="this.form.submit()"
+    style="padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;cursor:pointer;">
+    <option value="">All orders</option>
+    {% for value, label in status_choices %}
+    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
 </form>
 
-<hr>
-
 {% if orders %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Order Ref</th>
-        <th>Items</th>
-        <th>Subtotal</th>
-        <th>Payout</th>
-        <th>Payment</th>
-        <th>Status</th>
-        <th>Date</th>
-        <th>Actions</th>
-    </tr>
-    {% for order in orders %}
-    <tr>
-        <td>{{ order.order.order_ref }}</td>
-        <td>
-            {% for item in order.items.all %}
-                {{ item.product_name }} x{{ item.quantity }}<br>
-            {% endfor %}
-        </td>
-        <td>₦{{ order.subtotal }}</td>
-        <td>₦{{ order.seller_payout }}</td>
-        <td>{{ order.order.get_payment_method_display }}</td>
-        <td>{{ order.get_status_display }}</td>
-        <td>{{ order.created_at|date:"d M Y" }}</td>
-        <td>
-            {% if order.status == 'payment_confirmed' or order.status == 'processing' %}
-                <form method="post" action="{% url 'dashboard:mark_shipped' order_id=order.pk %}">
-                    {% csrf_token %}
-                    <input type="text" name="tracking_number" placeholder="Tracking # (optional)">
-                    <button type="submit">Mark Shipped</button>
-                </form>
-            {% endif %}
+<div style="display:flex;flex-direction:column;gap:12px;">
+  {% for order in orders %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);">{{ order.order.order_ref }}</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">{{ order.created_at|date:"M d, Y · H:i" }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);">₦{{ order.seller_payout|floatformat:0|intcomma }}</span>
+        <span style="padding:4px 12px;border-radius:20px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;
+          {% if order.status == 'delivered' or order.status == 'completed' %}background:#DCFCE7;color:#166534;
+          {% elif order.status == 'shipped' %}background:#DBEAFE;color:#1E40AF;
+          {% elif order.status == 'pending' %}background:#FEF3C7;color:#92400E;
+          {% elif order.status == 'disputed' %}background:#FEE2E2;color:#991B1B;
+          {% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+          {{ order.get_status_display }}
+        </span>
+      </div>
+    </div>
 
-            {% if order.status == 'shipped' or order.status == 'out_for_delivery' %}
-                <form method="post" action="{% url 'dashboard:mark_delivered' order_id=order.pk %}">
-                    {% csrf_token %}
-                    <button type="submit">Mark Delivered</button>
-                </form>
-            {% endif %}
+    {# Items #}
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:14px;">
+      {% for item in order.items.all %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-family:'Satoshi',sans-serif;font-size:13px;">
+        <span style="color:var(--text);font-weight:500;">{{ item.product_name }}</span>
+        <span style="color:var(--text-muted);">x{{ item.quantity }} · ₦{{ item.unit_price|floatformat:0|intcomma }}</span>
+      </div>
+      {% endfor %}
+    </div>
 
-            {% if order.tracking_number %}
-                <br>Tracking: {{ order.tracking_number }}
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    {# Payment method #}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <iconify-icon icon="{% if order.order.payment_method == 'pod' %}heroicons:banknotes{% else %}heroicons:credit-card{% endif %}" style="font-size:14px;color:var(--text-muted);"></iconify-icon>
+      <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ order.order.get_payment_method_display }}</span>
+      {% if order.tracking_number %}
+      <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">· Tracking: {{ order.tracking_number }}</span>
+      {% endif %}
+    </div>
+
+    {# Actions #}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      {% if order.status == 'payment_confirmed' or order.status == 'processing' %}
+      <form method="post" action="/dashboard/seller/orders/{{ order.pk }}/ship/" style="display:flex;gap:6px;flex:1;min-width:200px;">
+        {% csrf_token %}
+        <input type="text" name="tracking_number" placeholder="Tracking # (optional)"
+          style="flex:1;padding:8px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text);outline:none;">
+        <button type="submit" style="padding:8px 16px;background:var(--accent);color:#FAF7F5;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          Mark shipped
+        </button>
+      </form>
+      {% endif %}
+      {% if order.status == 'shipped' or order.status == 'out_for_delivery' %}
+      <form method="post" action="/dashboard/seller/orders/{{ order.pk }}/deliver/">
+        {% csrf_token %}
+        <button type="submit" style="padding:8px 16px;background:var(--success);color:#fff;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
+          Mark delivered
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% else %}
-    <p>No orders found.</p>
+<div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+  <iconify-icon icon="heroicons:clipboard-document-list" style="font-size:48px;color:var(--text-muted);display:block;margin-bottom:16px;"></iconify-icon>
+  <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">No orders yet</div>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">Orders will appear here when buyers purchase from your store.</p>
+</div>
 {% endif %}
-
-</body>
-</html>
+{% endblock %}

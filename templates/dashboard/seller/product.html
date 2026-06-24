@@ -1,63 +1,89 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>My Products</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Products — {{ seller.store_name }}{% endblock %}
+{% block nav_products %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Products</div>
+    <div class="seller-page-sub">Manage your store listings</div>
+  </div>
+  <a href="/products/add/" class="btn-primary" style="padding:10px 20px;font-size:13px;">
+    <iconify-icon icon="heroicons:plus"></iconify-icon>
+    Add product
+  </a>
+</div>
 
-<form method="get">
-    <input type="text" name="q" value="{{ search }}" placeholder="Search products...">
-    <select name="status">
-        <option value="">All</option>
-        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-        <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
-        <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
-    </select>
-    <button type="submit">Filter</button>
+{# Search + filter #}
+<form method="get" style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px;position:relative;">
+    <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;"></iconify-icon>
+    <input type="text" name="q" value="{{ search }}" placeholder="Search products..."
+      style="width:100%;padding:10px 14px 10px 36px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;">
+  </div>
+  <select name="status" onchange="this.form.submit()"
+    style="padding:10px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;cursor:pointer;">
+    <option value="">All status</option>
+    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+    <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Out of stock</option>
+    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+  </select>
 </form>
 
-<hr>
-
-<a href="{% url 'products:create' %}">+ Add New Product</a>
-
-<br><br>
-
+{# Products grid #}
 {% if products %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Stock</th>
-        <th>Base Price</th>
-        <th>Restock Deadline</th>
-        <th>Actions</th>
-    </tr>
-    {% for product in products %}
-    <tr>
-        <td>{{ product.name }}</td>
-        <td>{{ product.status_label }}</td>
-        <td>{{ product.total_stock }}</td>
-        <td>₦{{ product.base_price }}</td>
-        <td>
-            {% if product.restock_deadline %}
-                {{ product.restock_deadline|date:"d M Y" }}
-            {% else %}
-                —
-            {% endif %}
-        </td>
-        <td>
-            <a href="{% url 'products:edit' product_id=product.pk %}">Edit</a> |
-            <a href="{% url 'products:restock' product_id=product.pk %}">Restock</a> |
-            <a href="{% url 'products:delete' product_id=product.pk %}">Delete</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+  {% for product in products %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+    <div style="height:160px;background:var(--surface-alt);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+      {% with img=product.images.all|first %}
+      {% if img %}
+      <img src="{{ img.image.url }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;">
+      {% else %}
+      <iconify-icon icon="heroicons:photo" style="font-size:36px;color:var(--text-muted);"></iconify-icon>
+      {% endif %}
+      {% endwith %}
+      {# Status badge #}
+      <span style="position:absolute;top:8px;left:8px;padding:3px 10px;border-radius:6px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;
+        {% if product.status_label == 'active' %}background:#DCFCE7;color:#166534;
+        {% elif product.status_label == 'low-stock' %}background:#FEF3C7;color:#92400E;
+        {% elif product.status_label == 'out-of-stock' %}background:#FEE2E2;color:#991B1B;
+        {% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+        {% if product.status_label == 'active' %}Active
+        {% elif product.status_label == 'low-stock' %}Low stock
+        {% elif product.status_label == 'out-of-stock' %}Out of stock
+        {% else %}Pending delete{% endif %}
+      </span>
+    </div>
+    <div style="padding:14px;">
+      <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ product.name }}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+        <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ product.total_stock }} in stock</span>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <a href="/products/{{ product.pk }}/edit/" style="flex:1;padding:8px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;text-align:center;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          Edit
+        </a>
+        <a href="/products/{{ product.pk }}/restock/" style="flex:1;padding:8px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;text-align:center;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          Restock
+        </a>
+        <a href="/products/{{ product.pk }}/delete/" style="padding:8px 10px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;font-family:'Satoshi',sans-serif;font-size:12px;color:var(--danger);text-decoration:none;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+          <iconify-icon icon="heroicons:trash" style="font-size:14px;"></iconify-icon>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% else %}
-    <p>No products found.</p>
+<div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+  <iconify-icon icon="heroicons:shopping-bag" style="font-size:48px;color:var(--text-muted);display:block;margin-bottom:16px;"></iconify-icon>
+  <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">No products yet</div>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">Start listing products to your store.</p>
+  <a href="/products/add/" class="btn-primary">Add your first product</a>
+</div>
 {% endif %}
-
-</body>
-</html>
+{% endblock %}

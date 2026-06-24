@@ -14,6 +14,102 @@
   border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
+
+/* ── MAIN HERO (skeleton-locked, content-driven) ── */
+.main-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-alt);
+}
+.main-hero.layout-split {
+  position: relative;
+  min-height: 560px;
+  margin-top: -64px;
+  padding-top: 64px;
+}
+
+.main-hero.layout-split .main-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 460px;
+  object-fit: cover;
+  object-position: 80% center;
+  display: block;
+}
+.main-hero.layout-split::after {
+  display: none;
+}
+[data-theme="dark"] .main-hero.layout-split::after {
+  background: linear-gradient(to right, rgba(15,9,7,0.92) 0%, rgba(15,9,7,0.55) 45%, rgba(15,9,7,0.1) 75%);
+}
+.main-hero.layout-split .main-hero-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 460px;
+  padding: 56px 48px;
+  max-width: 55%;
+}
+.main-hero.layout-split.align-right { direction: rtl; }
+.main-hero.layout-split.align-right .main-hero-text { direction: ltr; margin-left: auto; }
+.main-hero.layout-split.align-center .main-hero-text { text-align: center; align-items: center; margin: 0 auto; }
+
+.main-hero-headline {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.main-hero-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 420px;
+  margin-bottom: 28px;
+}
+.main-hero.layout-split.align-center .main-hero-sub { max-width: 100%; }
+/* Overlay layout */
+.main-hero.layout-overlay { min-height: 460px; }
+.main-hero.layout-overlay .main-hero-img {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+.main-hero.layout-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0.05));
+}
+.main-hero.layout-overlay .main-hero-text {
+  position: relative;
+  z-index: 1;
+  min-height: 460px;
+  padding: 48px;
+}
+.main-hero.layout-overlay .main-hero-headline,
+.main-hero.layout-overlay .main-hero-sub { color: #FAF7F5; }
+.main-hero.layout-overlay.align-left .main-hero-text { align-items: flex-start; text-align: left; }
+.main-hero.layout-overlay.align-center .main-hero-text { align-items: center; text-align: center; }
+.main-hero.layout-overlay.align-right .main-hero-text { align-items: flex-end; text-align: right; }
+
+@media (max-width: 768px) {
+  .main-hero.layout-split { grid-template-columns: 1fr; min-height: auto; }
+  .main-hero.layout-split.align-right { direction: ltr; }
+  .main-hero-img { min-height: 280px; }
+  .main-hero-text { padding: 32px 20px; }
+  .main-hero.layout-overlay .main-hero-text { padding: 32px 20px; min-height: 360px; }
+}
+
+
 .store-hero-bg {
   position: absolute;
   inset: 0;
@@ -94,36 +190,6 @@
 }
 [data-theme="dark"] .store-vacation-badge { color: #FCD34D; }
 
-/* Store banner headline */
-.store-banner-bar {
-  background: {{ store.banner_bg_color|default:'var(--surface-alt)' }};
-  border-top: 1px solid var(--border);
-  padding: 20px 0;
-  margin-top: 0;
-}
-.store-banner-bar-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.store-banner-headline {
-  font-family: 'Clash Display', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: {{ store.banner_accent_color|default:'var(--text)' }};
-  letter-spacing: -0.01em;
-}
-.store-banner-sub {
-  font-family: 'Satoshi', sans-serif;
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-top: 3px;
-}
-
 /* Store tabs nav */
 .store-tabs-nav {
   max-width: 1280px;
@@ -133,6 +199,10 @@
   gap: 0;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+}
+.store-wrap {
+  border-radius: 0 0 24px 24px;
+  overflow: hidden;
 }
 .store-tab {
   padding: 14px 20px;
@@ -158,6 +228,125 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px;
+}
+/* ── TRUST BADGES ── */
+.trust-badges-row {
+  max-width: 1280px;
+  margin: -24px auto 0;
+  position: relative;
+  z-index: 2;
+  background: var(--text);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+[data-theme="dark"] .trust-badges-row { background: var(--surface); border: 1px solid var(--border); border-bottom: none; }
+.trust-badges-items {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 0;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.trust-badges-note {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: rgba(250,247,245,0.55);
+  text-align: center;
+}
+[data-theme="dark"] .trust-badges-note { color: var(--text-muted); }
+
+.trust-badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bg);
+  text-align: center;
+  flex: 1;
+  padding: 0 16px;
+  position: relative;
+}
+[data-theme="dark"] .trust-badge-item { color: var(--text); }
+.trust-badge-item + .trust-badge-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 32px;
+  background: rgba(250,247,245,0.15);
+}
+[data-theme="dark"] .trust-badge-item + .trust-badge-item::before { background: var(--border); }
+.trust-badge-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trust-badge-icon iconify-icon { font-size: 24px; color: var(--bg); }
+[data-theme="dark"] .trust-badge-icon iconify-icon { color: var(--accent); }
+/* ── PROMO BANNER ── */
+.promo-banner {
+  border-radius: 16px;
+  padding: 36px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  gap: 6px;
+}
+.promo-banner-text {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@media (max-width: 768px) {
+  .promo-banner { padding: 28px 20px; }
+  .promo-banner-text { font-size: 20px; }
+}
+
+
+/* ── BESTSELLERS ── */
+.section-block { padding: 40px 0; }
+.section-block-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-block-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.bestsellers-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.bestsellers-scroll::-webkit-scrollbar { display: none; }
+.bestsellers-scroll .product-card { flex-shrink: 0; width: 220px; }
+
+@media (max-width: 768px) {
+  .trust-badges-row { padding: 14px 16px; gap: 10px; justify-content: flex-start; overflow-x: auto; }
+  .trust-badge-item { white-space: nowrap; }
+  .section-block { padding: 28px 0; }
 }
 
 /* ── ACTIVE COUPON STRIP ── */
@@ -405,139 +594,133 @@
 
 {% block content %}
 
-{# ── STORE HERO ── #}
-<div class="store-hero">
-  <div class="store-hero-bg"></div>
-  <div class="store-hero-inner">
-    <div class="store-hero-top">
-
-      <div class="store-identity">
-        <div class="store-logo">
-          {% if store.logo %}
-          <img src="{{ store.logo.url }}" alt="{{ store.store_name }}">
-          {% else %}
-          <iconify-icon icon="heroicons:building-storefront"></iconify-icon>
-          {% endif %}
-        </div>
-        <div>
-          <div class="store-name">{{ store.store_name }}</div>
-          <div class="store-meta">
-            {% if store.rating_count > 0 %}
-            <div class="store-meta-item">
-              <div class="store-rating-stars">
-                {% for i in "12345" %}
-                  {% if forloop.counter <= store.rating_avg %}
-                  <iconify-icon icon="heroicons:star-solid"></iconify-icon>
-                  {% else %}
-                  <iconify-icon icon="heroicons:star"></iconify-icon>
-                  {% endif %}
-                {% endfor %}
-              </div>
-              <span>{{ store.rating_avg|floatformat:1 }} ({{ store.rating_count }} reviews)</span>
-            </div>
-            {% endif %}
-            <div class="store-meta-item">
-              <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
-              <span>{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</span>
-            </div>
-            {% if store.whatsapp_number %}
-            <div class="store-meta-item">
-              <iconify-icon icon="mdi:whatsapp"></iconify-icon>
-              <a href="https://wa.me/{{ store.whatsapp_number }}" target="_blank"
-                 style="color:var(--accent);text-decoration:none;font-weight:600;font-size:13px;">
-                WhatsApp
-              </a>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <div class="store-actions">
-        {% if store.is_on_vacation %}
-        <div class="store-vacation-badge">
-          <iconify-icon icon="heroicons:moon"></iconify-icon>
-          On vacation — back {{ store.vacation_return_date|date:"M d"|default:"soon" }}
-        </div>
-        {% endif %}
-        {% if store.whatsapp_number %}
-        <a href="https://wa.me/{{ store.whatsapp_number }}" target="_blank" class="btn-primary" style="padding:10px 20px;font-size:13px;">
-          <iconify-icon icon="mdi:whatsapp"></iconify-icon>
-          Message seller
-        </a>
-        {% endif %}
-      </div>
-
-    </div>
-  </div>
-
-  {# Banner bar #}
-  {% if store.banner_headline %}
-  <div class="store-banner-bar">
-    <div class="store-banner-bar-inner">
-      <div>
-        <div class="store-banner-headline">{{ store.banner_headline }}</div>
-        {% if store.banner_subtext %}
-        <div class="store-banner-sub">{{ store.banner_subtext }}</div>
-        {% endif %}
-      </div>
-      {% if store.whatsapp_number %}
-      <a href="https://wa.me/{{ store.whatsapp_number }}" class="btn-ghost" style="padding:9px 18px;font-size:13px;flex-shrink:0;">
-        Shop now
-        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
-      </a>
-      {% endif %}
-    </div>
-  </div>
+{# ── MAIN HERO (skeleton-locked) ── #}
+<div class="main-hero layout-{{ store.hero_layout_style|default:'split' }} align-{{ store.hero_text_align|default:'left' }}">
+  {% if store.header_image %}
+  <img src="{{ store.header_image.image.url }}" alt="{{ store.store_name }}" class="main-hero-img">
   {% endif %}
-
-  {# Tabs nav #}
-  <div class="store-tabs-nav" x-data>
-    <button class="store-tab active" @click="$dispatch('store-tab', 'products')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'products')">
-      Products
-    </button>
-    <button class="store-tab" @click="$dispatch('store-tab', 'about')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'about')">
-      About Store
-    </button>
+  <div class="main-hero-text">
+    {% if store.hero_headline %}
+    <h1 class="main-hero-headline">{{ store.hero_headline }}</h1>
+    {% endif %}
+    {% if store.hero_subtext %}
+    <p class="main-hero-sub">{{ store.hero_subtext }}</p>
+    {% endif %}
+    {% if store.hero_cta_text %}
+    <a href="#products" class="btn-primary" style="padding:13px 28px;font-size:14px;width:fit-content;">
+      {{ store.hero_cta_text }}
+    </a>
+    {% endif %}
   </div>
-
 </div>
 
-{# ── STORE CONTENT ── #}
-<div class="store-wrap" x-data="{ activeTab: 'products' }" @store-tab.window="activeTab = $event.detail">
+{# ── TRUST BADGES ── #}
+<div class="trust-badges-row">
+  <div class="trust-badges-items">
+    <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:shield-check"></iconify-icon></div> Premium Quality</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:truck"></iconify-icon></div> Free Delivery</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:arrow-uturn-left"></iconify-icon></div> Easy Returns</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:chat-bubble-left-ellipsis"></iconify-icon></div> 24/7 Support</div>
+  </div>
+</div>
 
-  {# Active coupon #}
-  {% if active_coupon %}
-  <div class="coupon-strip" x-data="{ copied: false }">
-    <div class="coupon-strip-left">
-      <div class="coupon-icon">
-        <iconify-icon icon="heroicons:tag"></iconify-icon>
+{# ── TABS + CONTENT WRAPPER ── #}
+<div x-data="{ activeTab: 'products' }">
+
+{# ── STORE TABS ── #}
+<div class="store-tabs-nav" @store-tab.window="activeTab = $event.detail">
+  <button class="store-tab active" @click="$dispatch('store-tab', 'products')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'products')">
+    Products
+  </button>
+  <button class="store-tab" @click="$dispatch('store-tab', 'about')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'about')">
+    About Store
+  </button>
+</div>
+
+{% if store.show_bestsellers and bestsellers %}
+<div class="container section-block" x-show="activeTab === 'products'">
+  <div class="section-block-header">
+    <div class="section-block-title">{{ store.bestsellers_label|default:"Bestsellers" }}</div>
+  </div>
+
+  <div class="bestsellers-scroll">
+    {% for product in bestsellers %}
+    <a href="{% url 'products:detail' product.slug %}" class="product-card">
+      <div class="product-card-img">
+        {% with primary=product.images.all|first %}
+        {% if primary %}
+        <img src="{{ primary.image.url }}" alt="{{ product.name }}">
+        {% else %}
+        <iconify-icon icon="heroicons:photo"></iconify-icon>
+        {% endif %}
+        {% endwith %}
       </div>
-      <div>
-        <div class="coupon-title">{{ active_coupon.discount_value|floatformat:0 }}% OFF</div>
-        <div class="coupon-sub">
-          Use at checkout
-          {% if active_coupon.min_order_amount %} — min order ₦{{ active_coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
-          · Ends {{ active_coupon.valid_until|date:"M d" }}
+      <div class="product-card-body">
+        <div class="product-card-name">{{ product.name }}</div>
+        <div class="product-card-footer">
+          <span class="product-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</span>
+          {% if product.rating_count > 0 %}
+          <div class="product-card-rating">
+            <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+            {{ product.rating_avg|floatformat:1 }}
+          </div>
+          {% endif %}
         </div>
       </div>
-    </div>
-    <div class="coupon-code-wrap">
-      <div class="coupon-code">{{ active_coupon.code }}</div>
-      <button
-        class="coupon-copy-btn"
-        @click="navigator.clipboard.writeText('{{ active_coupon.code }}'); copied = true; setTimeout(() => copied = false, 2000)"
-      >
-        <iconify-icon :icon="copied ? 'heroicons:check' : 'heroicons:clipboard-document'"></iconify-icon>
-        <span x-text="copied ? 'Copied!' : 'Copy'">Copy</span>
-      </button>
-    </div>
+    </a>
+    {% endfor %}
   </div>
-  {% endif %}
+</div>
+{% endif %}
+
+{% if store.show_promo_banner and store.promo_banner_text %}
+<div class="container section-block" x-show="activeTab === 'products'">
+  <div class="promo-banner" style="background:{{ store.promo_banner_bg|default:'#1C0F0A' }};">
+    <div class="promo-banner-text" style="color:#FAF7F5;">{{ store.promo_banner_text }}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if store.show_new_arrivals and new_arrivals %}
+<div class="container section-block" x-show="activeTab === 'products'">
+  <div class="section-block-header">
+    <div class="section-block-title">{{ store.new_arrivals_label|default:"New Arrivals" }}</div>
+  </div>
+  <div class="products-grid">
+    {% for product in new_arrivals %}
+    <a href="{% url 'products:detail' product.slug %}" class="product-card">
+      <div class="product-card-img">
+        {% with primary=product.images.all|first %}
+        {% if primary %}
+        <img src="{{ primary.image.url }}" alt="{{ product.name }}">
+        {% else %}
+        <iconify-icon icon="heroicons:photo"></iconify-icon>
+        {% endif %}
+        {% endwith %}
+      </div>
+      <div class="product-card-body">
+        <div class="product-card-name">{{ product.name }}</div>
+        <div class="product-card-footer">
+          <span class="product-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</span>
+          {% if product.rating_count > 0 %}
+          <div class="product-card-rating">
+            <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+            {{ product.rating_avg|floatformat:1 }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── STORE CONTENT ── #}
+<div class="store-wrap">
 
   {# ── PRODUCTS TAB ── #}
   <div x-show="activeTab === 'products'">
-
     {# Search + sort bar #}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;">
       <form method="get" style="flex:1;max-width:400px;position:relative;">
@@ -621,9 +804,38 @@
     </div>
     {% endif %}
 
+    {% if active_coupon %}
+    <div class="coupon-strip" x-data="{ copied: false }" style="margin-top:32px;">
+      <div class="coupon-strip-left">
+        <div class="coupon-icon">
+          <iconify-icon icon="heroicons:tag"></iconify-icon>
+        </div>
+        <div>
+          <div class="coupon-title">{{ active_coupon.discount_value|floatformat:0 }}% OFF</div>
+          <div class="coupon-sub">
+            Use at checkout
+            {% if active_coupon.min_order_amount %} — min order ₦{{ active_coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
+            · Ends {{ active_coupon.valid_until|date:"M d" }}
+          </div>
+        </div>
+      </div>
+      <div class="coupon-code-wrap">
+        <div class="coupon-code">{{ active_coupon.code }}</div>
+        <button
+          class="coupon-copy-btn"
+          @click="navigator.clipboard.writeText('{{ active_coupon.code }}'); copied = true; setTimeout(() => copied = false, 2000)"
+        >
+          <iconify-icon :icon="copied ? 'heroicons:check' : 'heroicons:clipboard-document'"></iconify-icon>
+          <span x-text="copied ? 'Copied!' : 'Copy'">Copy</span>
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 
   {# ── ABOUT TAB ── #}
+
   <div x-show="activeTab === 'about'" style="display:none;">
     <div class="about-grid">
 
@@ -697,14 +909,17 @@
         </div>
       </div>
       {% endif %}
-
-    </div>
+      </div>
   </div>
+</div>
 
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
+
+
 <script>
   gsap.from('.store-identity', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' });
   gsap.from('.products-grid .product-card', {

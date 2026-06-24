@@ -541,27 +541,33 @@
 <script>
   function productData() {
     return {
-      activeImg: '{% with primary=product.images.all|first %}{% if primary %}{{ primary.image.url|escapejs }}{% endif %}{% endwith %}',
+    activeImg: '{% with primary=product.images.all|first %}{% if primary %}{{ primary.image.url|escapejs }}{% endif %}{% endwith %}',
       selectedVariants: {},
       qty: 1,
       selectedSku: null,
+      init() {
+        this.updateSku();
+      },
       skuMap: {{ sku_map|safe }},
       inWishlist: {% if in_wishlist %}true{% else %}false{% endif %},
       getSkuKey() {
-  const vals = Object.values(this.selectedVariants).map(Number).sort((a, b) => a - b);
-  return vals.join('-');
+      const vals = Object.values(this.selectedVariants).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+      console.log('Selected variants:', this.selectedVariants, '| Generated key:', vals.join('-'));
+      return vals.join('-');
+    },
+    updateSku() {
+      const key = this.getSkuKey();
+      console.log('SKU key:', key, '| Map keys:', Object.keys(this.skuMap));
+      this.selectedSku = this.skuMap[key] !== undefined ? this.skuMap[key] : null;
+      if (this.selectedSku && this.qty > this.selectedSku.stock) {
+        this.qty = Math.max(1, this.selectedSku.stock);
+      }
+    },
+    selectVariant(typeId, optionId) {
+  this.selectedVariants[String(typeId)] = String(optionId);
+  this.updateSku();
 },
-      updateSku() {
-        const key = this.getSkuKey();
-        this.selectedSku = this.skuMap[key] || null;
-        if (this.selectedSku && this.qty > this.selectedSku.stock) {
-          this.qty = Math.max(1, this.selectedSku.stock);
-        }
-      },
-      selectVariant(typeId, optionId) {
-        this.selectedVariants[typeId] = String(optionId);
-        this.updateSku();
-      },
+
       isVariantSelected(typeId, optionId) {
         return this.selectedVariants[typeId] === String(optionId);
       },
@@ -574,9 +580,11 @@
         return {{ product.total_stock|default:0 }};
       },
       get canAddToCart() {
-        const allSelected = Object.keys(this.selectedVariants).length >= {{ variant_type_count|default:0 }};
-        return allSelected && this.selectedSku && this.selectedSku.stock > 0 && this.qty <= this.selectedSku.stock;
-      },
+  const totalTypes = {{ variant_type_count|default:0 }};
+  const allSelected = totalTypes === 0 || Object.keys(this.selectedVariants).length >= totalTypes;
+  return allSelected && this.selectedSku !== null && this.selectedSku.stock > 0 && this.qty <= this.selectedSku.stock;
+},
+
       incQty() { if (this.qty < (this.selectedSku ? this.selectedSku.stock : 10)) this.qty++; },
       decQty() { if (this.qty > 1) this.qty--; },
       async toggleWishlist() {
@@ -731,6 +739,7 @@
           </div>
           <form method="post"
                 :action="selectedSku ? '/orders/cart/add/' + selectedSku.id + '/' : '#'"
+                @submit="if (selectedSku) { $el.action = '/orders/cart/add/' + selectedSku.id + '/'; } else { $event.preventDefault(); }"
                 style="flex:1;display:flex;gap:10px;">
             {% csrf_token %}
             <input type="hidden" name="quantity" :value="qty">

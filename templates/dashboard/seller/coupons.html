@@ -1,49 +1,59 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>My Coupons</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Coupons — {{ seller.store_name }}{% endblock %}
+{% block nav_coupons %}active{% endblock %}
 
-<hr>
-
-<a href="{% url 'dashboard:create_coupon' %}">+ Create New Coupon</a>
-
-<br><br>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Coupons</div>
+    <div class="seller-page-sub">Create discount codes for your customers</div>
+  </div>
+  <a href="/dashboard/seller/coupons/create/" class="btn-primary" style="padding:10px 20px;font-size:13px;">
+    <iconify-icon icon="heroicons:plus"></iconify-icon>
+    Create coupon
+  </a>
+</div>
 
 {% if coupons %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Code</th>
-        <th>Discount</th>
-        <th>Uses</th>
-        <th>Max Uses</th>
-        <th>Valid Until</th>
-        <th>Active</th>
-        <th>Actions</th>
-    </tr>
-    {% for coupon in coupons %}
-    <tr>
-        <td><strong>{{ coupon.code }}</strong></td>
-        <td>{{ coupon.discount_value }}%</td>
-        <td>{{ coupon.uses_count }}</td>
-        <td>{{ coupon.max_uses }}</td>
-        <td>{{ coupon.valid_until|date:"d M Y" }}</td>
-        <td>{% if coupon.is_active %}Yes{% else %}No{% endif %}</td>
-        <td>
-            {% if coupon.is_active %}
-            <form method="post" action="{% url 'dashboard:deactivate_coupon' coupon_id=coupon.pk %}">
-                {% csrf_token %}
-                <button type="submit">Deactivate</button>
-            </form>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div style="display:flex;flex-direction:column;gap:10px;">
+  {% for coupon in coupons %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--accent);background:var(--accent-soft);padding:8px 14px;border-radius:8px;letter-spacing:0.06em;">{{ coupon.code }}</div>
+      <div>
+        <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);">{{ coupon.discount_value|floatformat:0 }}% OFF</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+          {{ coupon.uses_count }}/{{ coupon.max_uses }} uses
+          {% if coupon.min_order_amount %} · Min ₦{{ coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
+          · Ends {{ coupon.valid_until|date:"M d, Y" }}
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="padding:4px 12px;border-radius:20px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;
+        {% if coupon.is_active %}background:#DCFCE7;color:#166534;{% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+        {% if coupon.is_active %}Active{% else %}Inactive{% endif %}
+      </span>
+      {% if coupon.is_active %}
+      <form method="post" action="/dashboard/seller/coupons/{{ coupon.pk }}/deactivate/">
+        {% csrf_token %}
+        <button type="submit" style="padding:6px 14px;background:var(--surface-alt);border:1px solid var(--border);border-radius:6px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:600;color:var(--danger);cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+          Deactivate
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% else %}
-    <p>No coupons yet.</p>
+<div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+  <iconify-icon icon="heroicons:tag" style="font-size:48px;color:var(--text-muted);display:block;margin-bottom:16px;"></iconify-icon>
+  <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">No coupons yet</div>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">Create discount codes to attract more buyers.</p>
+  <a href="/dashboard/seller/coupons/create/" class="btn-primary">Create first coupon</a>
+</div>
 {% endif %}
-
-</body>
-</html>
+{% endblock %}

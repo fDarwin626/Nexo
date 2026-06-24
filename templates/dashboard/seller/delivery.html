@@ -1,66 +1,94 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>Delivery Zones</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Delivery Zones — {{ seller.store_name }}{% endblock %}
+{% block nav_delivery %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Delivery zones</div>
+    <div class="seller-page-sub">Set where you deliver and the fees. Buyers see this on your products.</div>
+  </div>
+</div>
 
-<h2>Current Zones</h2>
-{% if zones %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>State</th>
-        <th>Fee (₦)</th>
-        <th>Est. Days</th>
-        <th>Actions</th>
-    </tr>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+  {# Current zones #}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Active zones</div>
+    {% if zones %}
     {% for zone in zones %}
-    <tr>
-        <td>{{ zone.state }}</td>
-        <td>₦{{ zone.fee }}</td>
-        <td>{{ zone.estimated_days }} day(s)</td>
-        <td>
-            <form method="post" action="{% url 'dashboard:delete_delivery_zone' zone_id=zone.pk %}">
-                {% csrf_token %}
-                <button type="submit">Remove</button>
-            </form>
-        </td>
-    </tr>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <iconify-icon icon="heroicons:map-pin" style="font-size:16px;color:var(--accent);"></iconify-icon>
+        <div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--text);">{{ zone.state }}</div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ zone.estimated_days }} day{{ zone.estimated_days|pluralize }} delivery</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:{% if zone.fee == 0 %}var(--success){% else %}var(--text){% endif %};">
+          {% if zone.fee == 0 %}Free{% else %}₦{{ zone.fee|floatformat:0|intcomma }}{% endif %}
+        </span>
+        <form method="post" action="/dashboard/seller/delivery/{{ zone.pk }}/delete/">
+          {% csrf_token %}
+          <button type="submit" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--danger);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+            <iconify-icon icon="heroicons:trash" style="font-size:14px;"></iconify-icon>
+          </button>
+        </form>
+      </div>
+    </div>
     {% endfor %}
-</table>
-{% else %}
-    <p>No delivery zones added yet.</p>
-{% endif %}
+    {% else %}
+    <div style="padding:32px;text-align:center;">
+      <iconify-icon icon="heroicons:truck" style="font-size:36px;color:var(--text-muted);display:block;margin-bottom:10px;"></iconify-icon>
+      <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">No delivery zones added yet.</p>
+    </div>
+    {% endif %}
+  </div>
 
-<hr>
+  {# Add new zone #}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
+    <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;">Add delivery zone</div>
+    <p style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;">
+      You can only deliver to your state and directly bordering states. Buyers outside this area can contact you on WhatsApp.
+    </p>
 
-<h2>Add Delivery Zone</h2>
-{% if available_states %}
-<form method="post">
-    {% csrf_token %}
-    <p>
-        <label>State:</label><br>
-        <select name="state">
-            {% for state in available_states %}
-            <option value="{{ state }}">{{ state }}</option>
-            {% endfor %}
+    {% if available_states %}
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">State</label>
+        <select name="state" style="width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;cursor:pointer;">
+          {% for state in available_states %}
+          <option value="{{ state }}">{{ state }}</option>
+          {% endfor %}
         </select>
-    </p>
-    <p>
-        <label>Delivery Fee (₦):</label><br>
-        <input type="number" name="fee" min="0" required>
-    </p>
-    <p>
-        <label>Estimated Delivery Days:</label><br>
-        <input type="number" name="estimated_days" min="1" value="1" required>
-    </p>
-    <button type="submit">Add Zone</button>
-</form>
-{% else %}
-    <p>You have added zones for all available states.</p>
-{% endif %}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div>
+          <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Fee (₦)</label>
+          <input type="number" name="fee" min="0" placeholder="0 = Free"
+            style="width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Est. days</label>
+          <input type="number" name="estimated_days" min="1" value="1"
+            style="width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;padding:12px;justify-content:center;">
+        <iconify-icon icon="heroicons:plus"></iconify-icon>
+        Add zone
+      </button>
+    </form>
+    {% else %}
+    <div style="padding:24px;text-align:center;background:var(--surface-alt);border-radius:8px;">
+      <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">You've added all available delivery zones.</p>
+    </div>
+    {% endif %}
+  </div>
 
-</body>
-</html>
+</div>
+{% endblock %}

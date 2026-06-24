@@ -1,38 +1,43 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
 
-<h1>Disputes</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Disputes — {{ seller.store_name }}{% endblock %}
+{% block nav_disputes %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Disputes</div>
+    <div class="seller-page-sub">Respond to buyer disputes. Admin initiates contact — you reply.</div>
+  </div>
+</div>
 
 {% if disputes %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Order Ref</th>
-        <th>Buyer</th>
-        <th>Reason</th>
-        <th>Status</th>
-        <th>Opened</th>
-        <th>Actions</th>
-    </tr>
-    {% for dispute in disputes %}
-    <tr>
-        <td>{{ dispute.seller_order.order.order_ref }}</td>
-        <td>{{ dispute.buyer.full_name }}</td>
-        <td>{{ dispute.get_reason_display }}</td>
-        <td>{{ dispute.get_status_display }}</td>
-        <td>{{ dispute.created_at|date:"d M Y" }}</td>
-        <td>
-            <a href="{% url 'dashboard:seller_dispute_detail' dispute_id=dispute.pk %}">View</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div style="display:flex;flex-direction:column;gap:10px;">
+  {% for dispute in disputes %}
+  <a href="/dashboard/seller/disputes/{{ dispute.pk }}/" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;text-decoration:none;color:var(--text);display:block;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;">{{ dispute.seller_order.order.order_ref }}</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+          {{ dispute.get_reason_display }} · {{ dispute.buyer.full_name }} · {{ dispute.created_at|date:"M d, Y" }}
+        </div>
+      </div>
+      <span style="padding:4px 12px;border-radius:20px;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;
+        {% if dispute.status == 'open' %}background:#FEF3C7;color:#92400E;
+        {% elif dispute.status == 'escalated' %}background:#FEE2E2;color:#991B1B;
+        {% elif dispute.status == 'resolved_refund' or dispute.status == 'resolved_kept' %}background:#DCFCE7;color:#166534;
+        {% else %}background:var(--surface-alt);color:var(--text-muted);{% endif %}">
+        {{ dispute.get_status_display }}
+      </span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
 {% else %}
-    <p>No disputes.</p>
+<div style="text-align:center;padding:80px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+  <iconify-icon icon="heroicons:shield-check" style="font-size:48px;color:var(--success);display:block;margin-bottom:16px;"></iconify-icon>
+  <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">No disputes</div>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">You're in good standing with all your buyers.</p>
+</div>
 {% endif %}
-
-</body>
-</html>
+{% endblock %}
