@@ -1,84 +1,97 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load humanize %}
 
-<h1>Seller Dashboard — {{ seller.store_name }}</h1>
-<p>Status: {{ seller.status }} | Rating: {{ seller.rating_avg }}★ ({{ seller.rating_count }} reviews)</p>
+{% block title %}Overview — {{ seller.store_name }}{% endblock %}
+{% block nav_home %}active{% endblock %}
 
-<hr>
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Overview</div>
+    <div class="seller-page-sub">Welcome back, {{ request.user.get_short_name }}</div>
+  </div>
+  <a href="/products/add/" class="btn-primary" style="padding:10px 20px;font-size:13px;">
+    <iconify-icon icon="heroicons:plus"></iconify-icon>
+    Add product
+  </a>
+</div>
 
-<h2>Subscription</h2>
+{# Stats row #}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:32px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">All-time revenue</div>
+    <div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--text);">₦{{ all_time_revenue|floatformat:0|intcomma }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">This month</div>
+    <div style="font-family:'DM Mono',monospace;font-size:24px;font-weight:500;color:var(--text);">₦{{ seller.monthly_revenue|floatformat:0|intcomma }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Active products</div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);">{{ total_products }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Active orders</div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);">{{ active_orders }}</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Open disputes</div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:{% if open_disputes > 0 %}var(--danger){% else %}var(--text){% endif %};">{{ open_disputes }}</div>
+  </div>
+</div>
+
+{# Subscription status #}
 {% if active_sub %}
-    <p>Plan: {{ active_sub.get_plan_display }}</p>
-    <p>Expires: {{ active_sub.end_date }} ({{ active_sub.days_remaining }} days remaining)</p>
-    <p>Urgency: {{ active_sub.urgency_level }}</p>
-{% else %}
-    <p style="color:red;">No active subscription. <a href="{% url 'dashboard:seller_subscription' %}">Renew now</a></p>
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+  <div>
+    <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Subscription</div>
+    <div style="font-family:'Satoshi',sans-serif;font-size:15px;font-weight:600;color:var(--text);">{{ active_sub.get_plan_display }} — {{ active_sub.days_remaining }} days left</div>
+    <div style="margin-top:10px;height:6px;background:var(--border);border-radius:3px;width:280px;max-width:100%;">
+      <div style="height:100%;border-radius:3px;background:{% if active_sub.urgency_level == 'green' %}var(--success){% elif active_sub.urgency_level == 'yellow' %}var(--warning){% else %}var(--danger){% endif %};width:{% widthratio active_sub.days_remaining active_sub.get_plan_display|length 100 %}%;"></div>
+    </div>
+  </div>
+  <a href="/dashboard/seller/subscription/" class="btn-ghost" style="padding:9px 18px;font-size:13px;">
+    Manage subscription
+  </a>
+</div>
 {% endif %}
 
-<hr>
+{# Recent orders #}
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Recent orders</div>
+    <a href="/dashboard/seller/orders/" style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">View all</a>
+  </div>
+  {% for order in recent_orders %}
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+    <div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:600;color:var(--text);">{{ order.order.order_ref }}</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ order.created_at|date:"M d, Y" }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text);">₦{{ order.seller_payout|floatformat:0|intcomma }}</span>
+      <span style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;background:var(--surface-alt);color:var(--text-muted);">{{ order.get_status_display }}</span>
+    </div>
+  </div>
+  {% empty %}
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);text-align:center;padding:20px 0;">No orders yet.</p>
+  {% endfor %}
+</div>
 
-<h2>Quick Stats</h2>
-<p>Total Active Products: {{ total_products }}</p>
-<p>Active Orders: {{ active_orders }}</p>
-<p>Open Disputes: {{ open_disputes }}</p>
-<p>All-Time Revenue: ₦{{ all_time_revenue }}</p>
-<p>This Month Revenue: ₦{{ seller.monthly_revenue }}</p>
-<p>Commission Rate: {{ seller.current_commission_rate }}%</p>
-
-<hr>
-
-<h2>Recent Orders</h2>
-{% if recent_orders %}
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>Order Ref</th>
-            <th>Status</th>
-            <th>Payout</th>
-            <th>Date</th>
-        </tr>
-        {% for order in recent_orders %}
-        <tr>
-            <td>{{ order.order.order_ref }}</td>
-            <td>{{ order.get_status_display }}</td>
-            <td>₦{{ order.seller_payout }}</td>
-            <td>{{ order.created_at|date:"d M Y" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-{% else %}
-    <p>No orders yet.</p>
-{% endif %}
-
-<hr>
-
-<h2>Low Stock Alerts</h2>
+{# Low stock #}
 {% if low_stock_skus %}
-    <ul>
-        {% for sku in low_stock_skus %}
-        <li>
-            {{ sku.product.name }} — {{ sku.stock }} units left
-            <a href="{% url 'products:restock' product_id=sku.product.pk %}">Restock</a>
-        </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No low stock items.</p>
+<div style="background:var(--surface);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:20px;">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+    <iconify-icon icon="heroicons:exclamation-triangle" style="font-size:18px;color:var(--warning);"></iconify-icon>
+    <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--text);">Low stock alerts</div>
+  </div>
+  {% for sku in low_stock_skus %}
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+    <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:500;color:var(--text);">{{ sku.product.name }}</div>
+    <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:var(--warning);">{{ sku.stock }} left</span>
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
 
-<hr>
-
-<h2>Navigation</h2>
-<ul>
-    <li><a href="{% url 'dashboard:seller_products' %}">My Products</a></li>
-    <li><a href="{% url 'dashboard:seller_orders' %}">My Orders</a></li>
-    <li><a href="{% url 'dashboard:seller_coupons' %}">My Coupons</a></li>
-    <li><a href="{% url 'dashboard:seller_subscription' %}">Subscription</a></li>
-    <li><a href="{% url 'dashboard:seller_settings' %}">Store Settings</a></li>
-    <li><a href="{% url 'dashboard:seller_delivery' %}">Delivery Zones</a></li>
-    <li><a href="{% url 'dashboard:seller_revenue' %}">Revenue</a></li>
-    <li><a href="{% url 'dashboard:seller_disputes' %}">Disputes</a></li>
-</ul>
-
-</body>
-</html>
+{% endblock %}

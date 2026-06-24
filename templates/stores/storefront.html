@@ -1,22 +1,714 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>{{ store.store_name }}</h1>
-    <p>{{ store.store_description }}</p>
-    <p>Rating: {{ store.rating_avg }}★ ({{ store.rating_count }} reviews)</p>
-    {% if store.whatsapp_url %}
-    <a href="{{ store.whatsapp_url }}" target="_blank">Chat on WhatsApp</a>
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ store.store_name }} — Nexo{% endblock %}
+{% block meta_description %}{{ store.store_description|truncatechars:160 }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── STORE HERO BANNER ── */
+.store-hero {
+  position: relative;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.store-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-color: {{ store.banner_bg_color|default:'#1C0F0A' }};
+  opacity: 0.06;
+}
+.store-hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 24px 0;
+}
+.store-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.store-identity {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.store-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  background: var(--surface-alt);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.store-logo img { width: 100%; height: 100%; object-fit: cover; }
+.store-logo iconify-icon { font-size: 32px; color: var(--text-muted); }
+.store-name {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.store-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.store-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.store-meta-item iconify-icon { font-size: 14px; }
+.store-rating-stars { display: flex; gap: 2px; }
+.store-rating-stars iconify-icon { font-size: 13px; color: #F59E0B; }
+.store-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.store-vacation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400E;
+}
+[data-theme="dark"] .store-vacation-badge { color: #FCD34D; }
+
+/* Store banner headline */
+.store-banner-bar {
+  background: {{ store.banner_bg_color|default:'var(--surface-alt)' }};
+  border-top: 1px solid var(--border);
+  padding: 20px 0;
+  margin-top: 0;
+}
+.store-banner-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.store-banner-headline {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: {{ store.banner_accent_color|default:'var(--text)' }};
+  letter-spacing: -0.01em;
+}
+.store-banner-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Store tabs nav */
+.store-tabs-nav {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.store-tab {
+  padding: 14px 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+}
+.store-tab:hover { color: var(--text); }
+.store-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── MAIN LAYOUT ── */
+.store-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── ACTIVE COUPON STRIP ── */
+.coupon-strip {
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface-alt));
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.coupon-strip-left { display: flex; align-items: center; gap: 16px; }
+.coupon-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.coupon-icon iconify-icon { font-size: 22px; color: #FAF7F5; }
+.coupon-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.coupon-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.coupon-code-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.coupon-code {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  letter-spacing: 0.06em;
+}
+.coupon-copy-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.coupon-copy-btn:hover { opacity: 0.88; }
+
+/* ── PRODUCTS GRID ── */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.product-card-img {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 40px;
+  position: relative;
+}
+.product-card-img img { width: 100%; height: 100%; object-fit: cover; }
+.product-card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-sale { background: var(--accent); color: #FAF7F5; }
+.badge-flash { background: #F59E0B; color: #1C0F0A; }
+.product-card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+.product-card-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 36px;
+}
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.product-card-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+.product-card-price-old {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  display: block;
+}
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Satoshi', sans-serif;
+}
+.product-card-rating iconify-icon { font-size: 13px; color: #F59E0B; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  grid-column: 1 / -1;
+}
+.empty-state iconify-icon { font-size: 56px; color: var(--text-muted); display: block; margin-bottom: 16px; }
+.empty-state h3 { font-family: 'Clash Display', sans-serif; font-size: 22px; color: var(--text); margin-bottom: 8px; }
+.empty-state p { font-family: 'Satoshi', sans-serif; font-size: 14px; color: var(--text-muted); }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 40px;
+}
+.page-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--accent); color: #FAF7F5; border-color: var(--accent); }
+
+/* About tab */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.about-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.about-card-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+.about-card-body {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.delivery-zone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+}
+.delivery-zone-row:last-child { border-bottom: none; }
+
+@media (max-width: 768px) {
+  .store-hero-top { flex-direction: column; }
+  .store-actions { width: 100%; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .about-grid { grid-template-columns: 1fr; }
+  .coupon-strip { flex-direction: column; align-items: flex-start; }
+  .store-wrap { padding: 20px 16px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── STORE HERO ── #}
+<div class="store-hero">
+  <div class="store-hero-bg"></div>
+  <div class="store-hero-inner">
+    <div class="store-hero-top">
+
+      <div class="store-identity">
+        <div class="store-logo">
+          {% if store.logo %}
+          <img src="{{ store.logo.url }}" alt="{{ store.store_name }}">
+          {% else %}
+          <iconify-icon icon="heroicons:building-storefront"></iconify-icon>
+          {% endif %}
+        </div>
+        <div>
+          <div class="store-name">{{ store.store_name }}</div>
+          <div class="store-meta">
+            {% if store.rating_count > 0 %}
+            <div class="store-meta-item">
+              <div class="store-rating-stars">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= store.rating_avg %}
+                  <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+                  {% else %}
+                  <iconify-icon icon="heroicons:star"></iconify-icon>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <span>{{ store.rating_avg|floatformat:1 }} ({{ store.rating_count }} reviews)</span>
+            </div>
+            {% endif %}
+            <div class="store-meta-item">
+              <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
+              <span>{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</span>
+            </div>
+            {% if store.whatsapp_number %}
+            <div class="store-meta-item">
+              <iconify-icon icon="mdi:whatsapp"></iconify-icon>
+              <a href="https://wa.me/{{ store.whatsapp_number }}" target="_blank"
+                 style="color:var(--accent);text-decoration:none;font-weight:600;font-size:13px;">
+                WhatsApp
+              </a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="store-actions">
+        {% if store.is_on_vacation %}
+        <div class="store-vacation-badge">
+          <iconify-icon icon="heroicons:moon"></iconify-icon>
+          On vacation — back {{ store.vacation_return_date|date:"M d"|default:"soon" }}
+        </div>
+        {% endif %}
+        {% if store.whatsapp_number %}
+        <a href="https://wa.me/{{ store.whatsapp_number }}" target="_blank" class="btn-primary" style="padding:10px 20px;font-size:13px;">
+          <iconify-icon icon="mdi:whatsapp"></iconify-icon>
+          Message seller
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  {# Banner bar #}
+  {% if store.banner_headline %}
+  <div class="store-banner-bar">
+    <div class="store-banner-bar-inner">
+      <div>
+        <div class="store-banner-headline">{{ store.banner_headline }}</div>
+        {% if store.banner_subtext %}
+        <div class="store-banner-sub">{{ store.banner_subtext }}</div>
+        {% endif %}
+      </div>
+      {% if store.whatsapp_number %}
+      <a href="https://wa.me/{{ store.whatsapp_number }}" class="btn-ghost" style="padding:9px 18px;font-size:13px;flex-shrink:0;">
+        Shop now
+        <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# Tabs nav #}
+  <div class="store-tabs-nav" x-data>
+    <button class="store-tab active" @click="$dispatch('store-tab', 'products')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'products')">
+      Products
+    </button>
+    <button class="store-tab" @click="$dispatch('store-tab', 'about')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'about')">
+      About Store
+    </button>
+  </div>
+
+</div>
+
+{# ── STORE CONTENT ── #}
+<div class="store-wrap" x-data="{ activeTab: 'products' }" @store-tab.window="activeTab = $event.detail">
+
+  {# Active coupon #}
+  {% if active_coupon %}
+  <div class="coupon-strip" x-data="{ copied: false }">
+    <div class="coupon-strip-left">
+      <div class="coupon-icon">
+        <iconify-icon icon="heroicons:tag"></iconify-icon>
+      </div>
+      <div>
+        <div class="coupon-title">{{ active_coupon.discount_value|floatformat:0 }}% OFF</div>
+        <div class="coupon-sub">
+          Use at checkout
+          {% if active_coupon.min_order_amount %} — min order ₦{{ active_coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
+          · Ends {{ active_coupon.valid_until|date:"M d" }}
+        </div>
+      </div>
+    </div>
+    <div class="coupon-code-wrap">
+      <div class="coupon-code">{{ active_coupon.code }}</div>
+      <button
+        class="coupon-copy-btn"
+        @click="navigator.clipboard.writeText('{{ active_coupon.code }}'); copied = true; setTimeout(() => copied = false, 2000)"
+      >
+        <iconify-icon :icon="copied ? 'heroicons:check' : 'heroicons:clipboard-document'"></iconify-icon>
+        <span x-text="copied ? 'Copied!' : 'Copy'">Copy</span>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── PRODUCTS TAB ── #}
+  <div x-show="activeTab === 'products'">
+
+    {# Search + sort bar #}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;">
+      <form method="get" style="flex:1;max-width:400px;position:relative;">
+        <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;"></iconify-icon>
+        <input
+          type="search"
+          name="q"
+          value="{{ request.GET.q|default:'' }}"
+          placeholder="Search this store..."
+          style="width:100%;padding:10px 16px 10px 38px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;"
+        />
+      </form>
+      <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+        {{ products.paginator.count }} product{{ products.paginator.count|pluralize }}
+      </div>
+    </div>
+
+    <div class="products-grid">
+      {% for product in products %}
+      <a href="{% url 'products:detail' product.slug %}" class="product-card">
+        <div class="product-card-img">
+          {% with primary=product.images.all|first %}
+          {% if primary %}
+          <img src="{{ primary.image.url }}" alt="{{ product.name }}">
+          {% else %}
+          <iconify-icon icon="heroicons:photo"></iconify-icon>
+          {% endif %}
+          {% endwith %}
+          {% if product.is_flash_sale %}
+          <span class="product-card-badge badge-flash">⚡ SALE</span>
+          {% elif product.discount_percent > 0 %}
+          <span class="product-card-badge badge-sale">{{ product.discount_percent }}% OFF</span>
+          {% endif %}
+        </div>
+        <div class="product-card-body">
+          <div class="product-card-name">{{ product.name }}</div>
+          <div class="product-card-footer">
+            <div>
+              {% if product.discount_percent > 0 %}
+              <span class="product-card-price-old">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+              {% endif %}
+              <span class="product-card-price">₦{{ product.effective_price|floatformat:0|intcomma }}</span>
+            </div>
+            {% if product.rating_count > 0 %}
+            <div class="product-card-rating">
+              <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+              {{ product.rating_avg|floatformat:1 }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="empty-state">
+        <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
+        <h3>No products yet</h3>
+        <p>This store hasn't listed any products yet.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if products.has_other_pages %}
+    <div class="pagination">
+      {% if products.has_previous %}
+      <a href="?page={{ products.previous_page_number }}" class="page-btn">
+        <iconify-icon icon="heroicons:chevron-left"></iconify-icon>
+      </a>
+      {% endif %}
+      {% for num in products.paginator.page_range %}
+        {% if products.number == num %}
+        <span class="page-btn active">{{ num }}</span>
+        {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+        <a href="?page={{ num }}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if products.has_next %}
+      <a href="?page={{ products.next_page_number }}" class="page-btn">
+        <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+      </a>
+      {% endif %}
+    </div>
     {% endif %}
 
-    <h2>Products</h2>
-    {% for product in products %}
-    <div>
-        <a href="{% url 'products:detail' product.slug %}">
-            {{ product.name }} — ₦{{ product.effective_price }}
-        </a>
+  </div>
+
+  {# ── ABOUT TAB ── #}
+  <div x-show="activeTab === 'about'" style="display:none;">
+    <div class="about-grid">
+
+      <div class="about-card">
+        <div class="about-card-title">About {{ store.store_name }}</div>
+        <div class="about-card-body">
+          {% if store.store_description %}
+          {{ store.store_description|linebreaks }}
+          {% else %}
+          <span style="color:var(--text-muted);font-style:italic;">No description added yet.</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="about-card">
+        <div class="about-card-title">Delivery zones</div>
+        {% for zone in store.delivery_zones.all %}
+        <div class="delivery-zone-row">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <iconify-icon icon="heroicons:map-pin" style="font-size:14px;color:var(--accent);"></iconify-icon>
+            <span>{{ zone.state }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);">
+              {% if zone.fee == 0 %}Free{% else %}₦{{ zone.fee|floatformat:0|intcomma }}{% endif %}
+            </span>
+            <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+              {{ zone.estimated_days }} day{{ zone.estimated_days|pluralize }}
+            </span>
+          </div>
+        </div>
+        {% empty %}
+        <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);">No delivery zones configured yet.</p>
+        {% endfor %}
+      </div>
+
+      <div class="about-card">
+        <div class="about-card-title">Store stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;">
+          <div style="text-align:center;padding:16px;background:var(--surface-alt);border-radius:10px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);">{{ products.paginator.count }}</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">Products</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:var(--surface-alt);border-radius:10px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);">{{ store.rating_avg|floatformat:1 }}</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">Rating</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:var(--surface-alt);border-radius:10px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);">{{ store.rating_count }}</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">Reviews</div>
+          </div>
+          <div style="text-align:center;padding:16px;background:var(--surface-alt);border-radius:10px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);">{{ store.delivery_zones.count }}</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">States covered</div>
+          </div>
+        </div>
+      </div>
+
+      {% if store.allow_pod %}
+      <div class="about-card">
+        <div class="about-card-title">Payment options</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);">
+            <iconify-icon icon="heroicons:credit-card" style="font-size:16px;color:var(--accent);"></iconify-icon>
+            Pay Now (card, bank transfer)
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);">
+            <iconify-icon icon="heroicons:banknotes" style="font-size:16px;color:var(--success);"></iconify-icon>
+            Pay on Delivery accepted
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
-    {% empty %}
-    <p>No products yet.</p>
-    {% endfor %}
-</body>
-</html>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  gsap.from('.store-identity', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' });
+  gsap.from('.products-grid .product-card', {
+    opacity: 0, y: 20, duration: 0.4, stagger: 0.06, delay: 0.2, ease: 'power2.out'
+  });
+</script>
+{% endblock %}

@@ -214,6 +214,22 @@ class SellerProfile(models.Model):
         help_text='Running total for current month — reset by Celery monthly'
     )
 
+    # ── STOREFRONT TEMPLATE IMAGE ────────────────────────────
+    header_image = models.ForeignKey(
+        'StorefrontImage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='stores_using',
+        help_text='Header image selected from admin gallery'
+    )
+    # ── STORE NAME CHANGE CONTROL ────────────────────────────
+    store_name_last_changed = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Last time store name was changed — enforces 3-month rule'
+    )
+
     # ── TIMESTAMPS ───────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -427,3 +443,33 @@ class FeaturedListing(models.Model):
 
     def __str__(self):
         return f'{self.seller.store_name} — {self.listing_type} featured'
+
+class StorefrontImage(models.Model):
+    """
+    Admin uploads these header/banner images.
+    Sellers pick from this gallery for their storefront.
+    Think of it as a template image library.
+    """
+    title = models.CharField(
+        max_length=100,
+        help_text='Internal name eg Fashion Hero, Electronics Banner'
+    )
+    image = models.ImageField(
+        upload_to='storefront/templates/',
+        help_text='High quality banner/header image'
+    )
+    category_hint = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Optional category suggestion eg Fashion, Electronics, General'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Storefront Image'
+        verbose_name_plural = 'Storefront Images'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

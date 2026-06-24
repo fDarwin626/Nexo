@@ -285,31 +285,63 @@ def seller_subscription(request):
 # ─────────────────────────────────────────────────────────────
 # SELLER STORE SETTINGS
 # ─────────────────────────────────────────────────────────────
-
 @login_required
 @seller_required
 def seller_store_settings(request):
     seller = request.user.seller_profile
+    from apps.stores.models import StorefrontImage
+    from django.utils import timezone as tz
+    from datetime import timedelta
+
+    storefront_images = StorefrontImage.objects.filter(is_active=True)
 
     if request.method == 'POST':
-        # Store identity
+        action = request.POST.get('action', 'settings')
+
+        # ── HEADER IMAGE SELECTION ──
+        if action == 'select_header':
+            image_id = request.POST.get('image_id')
+            if image_id:
+                try:
+                    img = StorefrontImage.objects.get(pk=image_id, is_active=True)
+                    seller.header_image = img
+                    seller.save(update_fields=['header_image'])
+                    messages.success(request, 'Header image updated.')
+                except StorefrontImage.DoesNotExist:
+                    messages.error(request, 'Image not found.')
+            return redirect('dashboard:seller_settings')
+
+        # ── STORE NAME CHANGE ──
+        new_store_name = request.POST.get('store_name', '').strip()
+        if new_store_name and new_store_name != seller.store_name:
+            # Check 3-month rule
+            if seller.store_name_last_changed:
+                days_since = (tz.now() - seller.store_name_last_changed).days
+                if days_since < 90:
+                    days_left = 90 - days_since
+                    messages.error(
+                        request,
+                        f'Store name can only be changed once every 3 months. '
+                        f'{days_left} days remaining.'
+                    )
+                    return redirect('dashboard:seller_settings')
+            from django.utils.text import slugify
+            seller.store_name = new_store_name
+            seller.store_slug = slugify(new_store_name)
+            seller.store_name_last_changed = tz.now()
+
+        # ── OTHER SETTINGS ──
         seller.store_description = request.POST.get('store_description', '').strip()
         seller.whatsapp_number = request.POST.get('whatsapp_number', '').strip()
-
-        # Banner
         seller.banner_headline = request.POST.get('banner_headline', '').strip()
         seller.banner_subtext = request.POST.get('banner_subtext', '').strip()
         seller.banner_bg_color = request.POST.get('banner_bg_color', '#111118').strip()
         seller.banner_accent_color = request.POST.get('banner_accent_color', '#FF4D00').strip()
-
-        # Toggles
         seller.allow_pod = request.POST.get('allow_pod') == 'on'
         seller.is_on_vacation = request.POST.get('is_on_vacation') == 'on'
-
         vacation_return = request.POST.get('vacation_return_date', '').strip()
         seller.vacation_return_date = vacation_return if vacation_return else None
 
-        # Logo upload
         if 'logo' in request.FILES:
             logo_file = request.FILES['logo']
             if not logo_file.name.lower().endswith('.png'):
@@ -321,10 +353,22 @@ def seller_store_settings(request):
         messages.success(request, 'Store settings updated.')
         return redirect('dashboard:seller_settings')
 
+    # Check if name change is allowed
+    from datetime import timedelta
+    can_change_name = True
+    name_change_days_left = 0
+    if seller.store_name_last_changed:
+        days_since = (timezone.now() - seller.store_name_last_changed).days
+        if days_since < 90:
+            can_change_name = False
+            name_change_days_left = 90 - days_since
+
     return render(request, 'dashboard/seller/settings.html', {
         'seller': seller,
+        'storefront_images': storefront_images,
+        'can_change_name': can_change_name,
+        'name_change_days_left': name_change_days_left,
     })
-
 
 # ─────────────────────────────────────────────────────────────
 # SELLER DELIVERY ZONES

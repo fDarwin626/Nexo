@@ -1,77 +1,551 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base_seller.html" %}
+{% load static %}
+{% load humanize %}
 
-<h1>Store Settings — {{ seller.store_name }}</h1>
-<a href="{% url 'dashboard:seller' %}">← Back to Dashboard</a>
+{% block title %}Storefront Builder — {{ seller.store_name }}{% endblock %}
+{% block nav_settings %}active{% endblock %}
 
-<hr>
+{% block seller_extra_head %}
+<style>
+.builder-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.builder-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+.builder-card-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.builder-card-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.field-group { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.field-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.field-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.field-textarea:focus { border-color: var(--accent); }
+.field-hint {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+.save-btn {
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.save-btn:hover { opacity: 0.88; }
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+/* Header image gallery */
+.image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+.gallery-option {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  aspect-ratio: 16/9;
+}
+.gallery-option.selected { border-color: var(--accent); }
+.gallery-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-option .check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-option.selected .check { display: flex; }
+.gallery-option .check iconify-icon { font-size: 13px; color: #FAF7F5; }
+.gallery-option-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+}
 
-    <h2>Store Identity</h2>
-    <p>
-        <label>Store Description:</label><br>
-        <textarea name="store_description" rows="4" cols="50">{{ seller.store_description }}</textarea>
-    </p>
-    <p>
-        <label>WhatsApp Number (with country code eg 2348012345678):</label><br>
-        <input type="text" name="whatsapp_number" value="{{ seller.whatsapp_number }}">
-    </p>
-    <p>
-        <label>Store Logo (PNG only):</label><br>
+/* Store preview */
+.store-preview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.preview-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.preview-label iconify-icon { font-size: 14px; color: var(--accent); }
+.preview-body {
+  padding: 0;
+  position: relative;
+}
+.preview-hero {
+  height: 140px;
+  background: var(--surface-alt);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+}
+.preview-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.preview-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+}
+.preview-hero-text {
+  position: relative;
+  z-index: 1;
+}
+.preview-store-name {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FAF7F5;
+}
+.preview-banner-text {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 2px;
+}
+.preview-store-info {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.preview-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.preview-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Toggle switch */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.toggle-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+@media (max-width: 900px) {
+  .builder-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Storefront Builder</div>
+    <div class="seller-page-sub">Customise how your store looks to buyers</div>
+  </div>
+  <a href="/store/{{ seller.store_slug }}/" target="_blank" class="btn-ghost" style="padding:9px 18px;font-size:13px;">
+    <iconify-icon icon="heroicons:arrow-top-right-on-square"></iconify-icon>
+    Preview store
+  </a>
+</div>
+
+{# ── LIVE PREVIEW ── #}
+<div class="store-preview" x-data="{
+  storeName: '{{ seller.store_name|escapejs }}',
+  bannerText: '{{ seller.banner_headline|escapejs }}',
+  selectedImg: '{% if seller.header_image %}{{ seller.header_image.image.url|escapejs }}{% endif %}'
+}">
+  <div class="preview-label">
+    <iconify-icon icon="heroicons:eye"></iconify-icon>
+    Live preview
+  </div>
+  <div class="preview-body">
+    <div class="preview-hero">
+      <template x-if="selectedImg">
+        <img :src="selectedImg" alt="Store header">
+      </template>
+      <div class="preview-hero-overlay"></div>
+      <div class="preview-hero-text">
+        <div class="preview-store-name" x-text="storeName"></div>
+        <div class="preview-banner-text" x-text="bannerText || 'Your banner headline appears here'"></div>
+      </div>
+    </div>
+    <div class="preview-store-info">
+      <div class="preview-logo">
         {% if seller.logo %}
-            <p>Current: {{ seller.logo }}</p>
+        <img src="{{ seller.logo.url }}" alt="{{ seller.store_name }}">
+        {% else %}
+        <iconify-icon icon="heroicons:building-storefront" style="font-size:16px;color:var(--text-muted);"></iconify-icon>
         {% endif %}
-        <input type="file" name="logo" accept=".png">
-    </p>
+      </div>
+      <div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:700;color:var(--text);" x-text="storeName"></div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);">{{ seller.rating_avg|floatformat:1 }}★ · {{ seller.products.count }} products</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <hr>
+{# ── HEADER IMAGE PICKER ── #}
+<div class="builder-card" style="margin-bottom:24px;" x-data="{ selectedImg: '{% if seller.header_image %}{{ seller.header_image.image.url|escapejs }}{% endif %}' }">
+  <div class="builder-card-title">Header image</div>
+  <div class="builder-card-sub">Pick a header image for your store. Admin provides these high-quality images.</div>
 
-    <h2>Banner</h2>
-    <p>
-        <label>Headline:</label><br>
-        <input type="text" name="banner_headline" value="{{ seller.banner_headline }}" maxlength="60">
-    </p>
-    <p>
-        <label>Subtext:</label><br>
-        <input type="text" name="banner_subtext" value="{{ seller.banner_subtext }}" maxlength="120">
-    </p>
-    <p>
-        <label>Background Color (hex):</label><br>
-        <input type="color" name="banner_bg_color" value="{{ seller.banner_bg_color }}">
-    </p>
-    <p>
-        <label>Accent Color (hex):</label><br>
-        <input type="color" name="banner_accent_color" value="{{ seller.banner_accent_color }}">
-    </p>
+  {% if storefront_images %}
+  <div class="image-gallery">
+    {% for img in storefront_images %}
+    <form method="post" style="display:contents;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="select_header">
+      <input type="hidden" name="image_id" value="{{ img.pk }}">
+      <button
+        type="submit"
+        class="gallery-option {% if seller.header_image.pk == img.pk %}selected{% endif %}"
+        title="{{ img.title }}"
+      >
+        <img src="{{ img.image.url }}" alt="{{ img.title }}">
+        <div class="check"><iconify-icon icon="heroicons:check"></iconify-icon></div>
+        <div class="gallery-option-label">{{ img.title }}</div>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="padding:32px;text-align:center;background:var(--surface-alt);border-radius:10px;">
+    <iconify-icon icon="heroicons:photo" style="font-size:32px;color:var(--text-muted);display:block;margin-bottom:8px;"></iconify-icon>
+    <p style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">No header images available yet. Admin will add them soon.</p>
+  </div>
+  {% endif %}
+</div>
 
-    <hr>
+{# ── SETTINGS FORM ── #}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
 
-    <h2>Store Options</h2>
-    <p>
-        <label>
+  <div class="builder-grid">
+
+    {# Left column — Identity #}
+    <div>
+      <div class="builder-card" style="margin-bottom:24px;">
+        <div class="builder-card-title">Store identity</div>
+        <div class="builder-card-sub">Your store's public name and description.</div>
+
+        <div class="field-group">
+          <label class="field-label">Store name</label>
+          {% if can_change_name %}
+          <input
+            type="text"
+            name="store_name"
+            class="field-input"
+            value="{{ seller.store_name }}"
+            maxlength="100"
+            x-model="storeName"
+          />
+          <p class="field-hint">Can be changed once every 3 months.</p>
+          {% else %}
+          <input type="text" class="field-input" value="{{ seller.store_name }}" disabled />
+          <p class="field-hint" style="color:var(--warning);">
+            <iconify-icon icon="heroicons:clock" style="font-size:12px;"></iconify-icon>
+            Name locked for {{ name_change_days_left }} more days.
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Store description</label>
+          <textarea
+            name="store_description"
+            class="field-textarea"
+            placeholder="Tell buyers what you sell and why they should choose you..."
+            maxlength="500"
+          >{{ seller.store_description }}</textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">WhatsApp number</label>
+          <input
+            type="text"
+            name="whatsapp_number"
+            class="field-input"
+            value="{{ seller.whatsapp_number }}"
+            placeholder="2348012345678"
+          />
+          <p class="field-hint">Include country code. Buyers use this to message you.</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Store logo (PNG only)</label>
+          {% if seller.logo %}
+          <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+            <img src="{{ seller.logo.url }}" alt="Logo" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--border);">
+            <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Current logo</span>
+          </div>
+          {% endif %}
+          <input type="file" name="logo" accept=".png" style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);">
+          <p class="field-hint">PNG only. Shown on your storefront and product cards.</p>
+        </div>
+      </div>
+
+      <div class="builder-card">
+        <div class="builder-card-title">Store options</div>
+        <div class="builder-card-sub">Control how your store operates.</div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Pay on Delivery</div>
+            <div class="toggle-sub">Allow buyers to pay when item arrives</div>
+          </div>
+          <label class="toggle-switch">
             <input type="checkbox" name="allow_pod" {% if seller.allow_pod %}checked{% endif %}>
-            Allow Pay on Delivery
-        </label>
-    </p>
-    <p>
-        <label>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Vacation mode</div>
+            <div class="toggle-sub">Store visible but cart disabled</div>
+          </div>
+          <label class="toggle-switch">
             <input type="checkbox" name="is_on_vacation" {% if seller.is_on_vacation %}checked{% endif %}>
-            Vacation Mode (store visible but cart disabled)
-        </label>
-    </p>
-    <p>
-        <label>Vacation Return Date (optional):</label><br>
-        <input type="date" name="vacation_return_date"
-            value="{{ seller.vacation_return_date|default:'' }}">
-    </p>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
 
-    <hr>
+        {% if seller.is_on_vacation %}
+        <div class="field-group" style="margin-top:14px;">
+          <label class="field-label">Return date (optional)</label>
+          <input
+            type="date"
+            name="vacation_return_date"
+            class="field-input"
+            value="{{ seller.vacation_return_date|default:'' }}"
+          />
+        </div>
+        {% endif %}
+      </div>
+    </div>
 
-    <button type="submit">Save Settings</button>
+    {# Right column — Banner #}
+    <div>
+      <div class="builder-card">
+        <div class="builder-card-title">Banner text</div>
+        <div class="builder-card-sub">The text overlay on your store header. Keep it short and punchy.</div>
+
+        <div class="field-group">
+          <label class="field-label">Headline</label>
+          <input
+            type="text"
+            name="banner_headline"
+            class="field-input"
+            value="{{ seller.banner_headline }}"
+            placeholder="eg Premium Quality Footwear"
+            maxlength="60"
+            x-model="bannerText"
+          />
+          <p class="field-hint">Max 60 characters. Shows bold on banner.</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Subtext</label>
+          <input
+            type="text"
+            name="banner_subtext"
+            class="field-input"
+            value="{{ seller.banner_subtext }}"
+            placeholder="eg Free delivery within Lagos"
+            maxlength="120"
+          />
+          <p class="field-hint">Max 120 characters. Shows below headline.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+          <div class="field-group">
+            <label class="field-label">Banner background</label>
+            <input
+              type="color"
+              name="banner_bg_color"
+              value="{{ seller.banner_bg_color }}"
+              style="width:100%;height:44px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;padding:4px;"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Accent color</label>
+            <input
+              type="color"
+              name="banner_accent_color"
+              value="{{ seller.banner_accent_color }}"
+              style="width:100%;height:44px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;padding:4px;"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:24px;display:flex;align-items:center;gap:12px;">
+    <button type="submit" class="save-btn">
+      <iconify-icon icon="heroicons:check"></iconify-icon>
+      Save changes
+    </button>
+    <a href="/store/{{ seller.store_slug }}/" target="_blank" style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:4px;">
+      <iconify-icon icon="heroicons:arrow-top-right-on-square" style="font-size:14px;"></iconify-icon>
+      View live store
+    </a>
+  </div>
+
 </form>
-
-</body>
-</html>
+{% endblock %}

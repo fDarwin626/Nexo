@@ -335,10 +335,8 @@ def product_detail(request, product_slug):
     # Build SKU map for Alpine.js variant selector
     sku_map = {}
     for sku in skus:
-        key = '-'.join(
-            str(opt.pk)
-            for opt in sku.variant_options.all().order_by('variant_type__pk')
-        )
+        option_ids = sorted([opt.pk for opt in sku.variant_options.all()])
+        key = '-'.join(str(i) for i in option_ids)
         sku_map[key] = {
             'id': sku.pk,
             'stock': sku.stock,
@@ -365,6 +363,21 @@ def product_detail(request, product_slug):
         seller__is_approved=True,
     ).exclude(pk=product.pk)[:6]
 
+    from collections import defaultdict
+    variant_groups = defaultdict(list)
+    seen = set()
+    for sku in skus:
+        for opt in sku.variant_options.all():
+            key = (opt.variant_type.pk, opt.pk)
+            if key not in seen:
+                seen.add(key)
+                variant_groups[opt.variant_type.name].append({
+                    'type_id': opt.variant_type.pk,
+                    'option_id': opt.pk,
+                    'value': opt.value,
+                })
+    variant_groups = dict(variant_groups)
+
     return render(request, 'products/detail.html', {
         'product': product,
         'skus': skus,
@@ -373,6 +386,8 @@ def product_detail(request, product_slug):
         'in_wishlist': in_wishlist,
         'related_products': related_products,
         'seller': product.seller,
+        'variant_groups': variant_groups,
+        'variant_type_count': len(variant_groups),
     })
 
 

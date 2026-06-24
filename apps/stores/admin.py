@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import SellerProfile, Subscription, DeliveryZone, FeaturedListing
+from .models import SellerProfile, Subscription, DeliveryZone, FeaturedListing, StorefrontImage
 
 
 @admin.register(SellerProfile)
@@ -127,6 +127,12 @@ class SellerProfileAdmin(admin.ModelAdmin):
             ) | User.objects.filter(is_staff=True)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+
+@admin.register(StorefrontImage)
+class StorefrontImageAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category_hint', 'is_active', 'created_at']
+    list_filter = ['is_active', 'category_hint']
+    search_fields = ['title']
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):

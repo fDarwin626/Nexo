@@ -26,6 +26,8 @@
 - **Reviews & Ratings** — Verified purchase only, photo upload, seller one-reply, auto-calculated product rating_avg and rating_count
 - - **Subcategory System** — sellers add subcategories on product creation, auto-saved globally, admin controls top-level categories and icons
 - **Homepage Deals** — platform coupon hero card, horizontal seller deals strip
+- **Marketplace UI** — filter sidebar, sort, active filter chips, pagination, mobile responsive
+- **Category Pages** — hero with icon, subcategory tabs, sibling tabs, filter sidebar
 
 ### 📋 Planned
 - **Section 13** — DRF API Layer (Flutter-ready)

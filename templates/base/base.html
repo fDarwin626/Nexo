@@ -521,6 +521,25 @@
 
     [x-cloak] { display: none !important; }
 
+/* ── LOGO-ONLY NAV (default for all pages) ─────────────── */
+    .nav-search,
+    .nav-links {
+      display: none !important;
+    }
+
+/* ── FULL NAV (home page only) ──────────────────────────── */
+    #navbar.full-nav .nav-search {
+      display: block !important;
+      flex: 1 1 0% !important;
+      width: 100% !important;
+      max-width: 480px !important;
+      min-width: 200px !important;
+    }
+    #navbar.full-nav .nav-links {
+      display: flex !important;
+      align-items: center !important;
+    }
+
     /* ── NO-NAV PAGES (auth screens) ───────────────────────── */
     body.no-nav #navbar,
     body.no-nav #mobile-tabbar,
@@ -575,7 +594,7 @@
 {# ── NAVBAR ──────────────────────────────────────────────────── #}
 {% if not block.super %}{% endif %}
 {% block hide_nav %}{% endblock %}
-<nav id="navbar" :class="{ 'hidden-up': navHidden }" {% if block.hide_nav %}style="display:none"{% endif %}>
+<nav id="navbar" :class="{ 'hidden-up': navHidden }" class="{% block nav_class %}{% endblock %}" {% if block.hide_nav %}style="display:none"{% endif %}>
   <div class="nav-inner">
 
     {# Brand #}
@@ -671,7 +690,8 @@
               </a>
               {% if user.role == 'seller' %}
               <a href="/dashboard/seller/" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--accent);text-decoration:none;font-size:14px;font-weight:600;transition:background 0.15s" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background='transparent'">
-                <iconify-icon icon="heroicons:store"></iconify-icon> Seller Dashboard
+                <iconify-icon icon="heroicons:building-storefront"></iconify-icon>
+                {% if user.seller_profile.store_name %}{{ user.seller_profile.store_name }}{% else %}My Store{% endif %}
               </a>
               {% endif %}
               {% if user.is_staff %}

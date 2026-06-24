@@ -1,0 +1,276 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+.seller-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 64px);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── SIDEBAR ── */
+.seller-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.seller-sidebar::-webkit-scrollbar { display: none; }
+
+.sidebar-store-info {
+  padding: 0 16px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.sidebar-store-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.sidebar-store-logo img { width: 100%; height: 100%; object-fit: cover; }
+.sidebar-store-name {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+.sidebar-store-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.status-active { background: #DCFCE7; color: #166534; }
+.status-pending { background: #FEF3C7; color: #92400E; }
+.status-suspended { background: #FEE2E2; color: #991B1B; }
+[data-theme="dark"] .status-active { background: #14532D; color: #86EFAC; }
+[data-theme="dark"] .status-pending { background: #451A03; color: #FCD34D; }
+[data-theme="dark"] .status-suspended { background: #450A0A; color: #FCA5A5; }
+
+.sidebar-nav-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 20px 4px;
+  margin-top: 8px;
+}
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.sidebar-nav-item:hover {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+.sidebar-nav-item.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.sidebar-nav-item iconify-icon { font-size: 18px; flex-shrink: 0; }
+
+.sidebar-store-url {
+  margin: 16px 16px 0;
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.sidebar-url-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.sidebar-url-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  word-break: break-all;
+  line-height: 1.4;
+}
+.sidebar-url-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0 0;
+  transition: color 0.15s;
+}
+.sidebar-url-copy:hover { color: var(--accent); }
+
+/* ── MAIN CONTENT ── */
+.seller-main {
+  background: var(--bg);
+  padding: 32px;
+  overflow-y: auto;
+}
+.seller-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.seller-page-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.seller-page-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .seller-layout { grid-template-columns: 1fr; }
+  .seller-sidebar { display: none; }
+  .seller-main { padding: 20px 16px; }
+}
+</style>
+{% block seller_extra_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="seller-layout">
+
+  {# ── SIDEBAR ── #}
+  <aside class="seller-sidebar">
+
+    <div class="sidebar-store-info">
+      {% if seller.logo %}
+      <img src="{{ seller.logo.url }}" alt="{{ seller.store_name }}" style="height:20px;width:auto;object-fit:contain;margin-bottom:8px;display:block;">
+      {% else %}
+      <iconify-icon icon="heroicons:building-storefront" style="font-size:20px;color:var(--text-muted);display:block;margin-bottom:8px;"></iconify-icon>
+      {% endif %}
+      <div class="sidebar-store-name">{{ seller.store_name }}</div>
+
+
+      <span class="sidebar-store-status status-{{ seller.status }}">
+        {{ seller.get_status_display }}
+      </span>
+    </div>
+
+    {# Store URL #}
+    <div class="sidebar-store-url" x-data="{ copied: false }">
+      <div class="sidebar-url-label">Your store URL</div>
+      <div class="sidebar-url-text">{{ request.scheme }}://{{ request.get_host }}/store/{{ seller.store_slug }}/</div>
+      <button
+        class="sidebar-url-copy"
+        @click="navigator.clipboard.writeText('{{ request.scheme }}://{{ request.get_host }}/store/{{ seller.store_slug }}/'); copied = true; setTimeout(() => copied = false, 2000)"
+      >
+        <iconify-icon :icon="copied ? 'heroicons:check' : 'heroicons:clipboard-document'" style="font-size:12px;"></iconify-icon>
+        <span x-text="copied ? 'Copied!' : 'Copy link'">Copy link</span>
+      </button>
+    </div>
+
+    <nav style="margin-top:8px;">
+      <div class="sidebar-nav-label">Store</div>
+      <a href="/dashboard/seller/" class="sidebar-nav-item {% block nav_home %}{% endblock %}">
+        <iconify-icon icon="heroicons:squares-2x2"></iconify-icon>
+        Overview
+      </a>
+      <a href="/dashboard/seller/products/" class="sidebar-nav-item {% block nav_products %}{% endblock %}">
+        <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
+        Products
+      </a>
+      <a href="/dashboard/seller/orders/" class="sidebar-nav-item {% block nav_orders %}{% endblock %}">
+        <iconify-icon icon="heroicons:clipboard-document-list"></iconify-icon>
+        Orders
+      </a>
+      <a href="/dashboard/seller/revenue/" class="sidebar-nav-item {% block nav_revenue %}{% endblock %}">
+        <iconify-icon icon="heroicons:banknotes"></iconify-icon>
+        Revenue
+      </a>
+
+      <div class="sidebar-nav-label">Marketing</div>
+      <a href="/dashboard/seller/coupons/" class="sidebar-nav-item {% block nav_coupons %}{% endblock %}">
+        <iconify-icon icon="heroicons:tag"></iconify-icon>
+        Coupons
+      </a>
+
+      <div class="sidebar-nav-label">Store Setup</div>
+      <a href="/dashboard/seller/settings/" class="sidebar-nav-item {% block nav_settings %}{% endblock %}">
+        <iconify-icon icon="heroicons:paint-brush"></iconify-icon>
+        Storefront Builder
+      </a>
+      <a href="/dashboard/seller/delivery/" class="sidebar-nav-item {% block nav_delivery %}{% endblock %}">
+        <iconify-icon icon="heroicons:truck"></iconify-icon>
+        Delivery Zones
+      </a>
+      <a href="/dashboard/seller/subscription/" class="sidebar-nav-item {% block nav_subscription %}{% endblock %}">
+        <iconify-icon icon="heroicons:credit-card"></iconify-icon>
+        Subscription
+      </a>
+
+      <div class="sidebar-nav-label">Support</div>
+      <a href="/dashboard/seller/disputes/" class="sidebar-nav-item {% block nav_disputes %}{% endblock %}">
+        <iconify-icon icon="heroicons:chat-bubble-left-right"></iconify-icon>
+        Disputes
+      </a>
+
+      <div style="padding:16px 20px;margin-top:8px;border-top:1px solid var(--border);">
+        <a href="/store/{{ seller.store_slug }}/" target="_blank"
+           style="display:flex;align-items:center;gap:8px;font-family:'Satoshi',sans-serif;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">
+          <iconify-icon icon="heroicons:arrow-top-right-on-square" style="font-size:15px;"></iconify-icon>
+          View my store
+        </a>
+      </div>
+    </nav>
+
+  </aside>
+
+  {# ── MAIN CONTENT ── #}
+  <main class="seller-main">
+    {% block seller_content %}{% endblock %}
+  </main>
+
+</div>
+{% endblock %}

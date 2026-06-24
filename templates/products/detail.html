@@ -1,50 +1,909 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>{{ product.name }}</h1>
-    <p>{{ product.description }}</p>
-    <p>Price: ₦{{ product.effective_price }}</p>
-    <p>Condition: {{ product.get_condition_display }}</p>
-    <p>Seller: <a href="{% url 'stores:store_detail' product.seller.store_slug %}">
-        {{ product.seller.store_name }}
-    </a></p>
+{% extends "base/base.html" %}
+{% load static %}
+{% load humanize %}
 
-    <h3>Variants</h3>
-    <div id="variant-selector">
-        <!-- Populated by Alpine.js in Section 14 -->
-        {% for sku in skus %}
-        <div>
-            {% for opt in sku.variant_options.all %}
-                {{ opt.variant_type.name }}: {{ opt.value }}
-            {% endfor %}
-            — Stock: {{ sku.stock }} — ₦{{ sku.effective_price }}
+{% block title %}{{ product.name }} — Nexo{% endblock %}
+{% block meta_description %}{{ product.description|truncatechars:160 }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.product-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+/* ── BREADCRUMB ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+.breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb iconify-icon { font-size: 14px; }
+
+/* ── PRODUCT LAYOUT ── */
+.product-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  margin-bottom: 64px;
+}
+
+/* ── IMAGE GALLERY ── */
+.gallery-wrap { position: sticky; top: 88px; height: fit-content; }
+.gallery-main {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  position: relative;
+}
+.gallery-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.2s;
+}
+.gallery-main-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.gallery-main-placeholder iconify-icon { font-size: 56px; }
+.gallery-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.gallery-badge.sale { background: var(--accent); color: #FAF7F5; }
+.gallery-badge.flash { background: #F59E0B; color: #1C0F0A; }
+.gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.gallery-thumbs::-webkit-scrollbar { display: none; }
+.gallery-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-thumb.active { border-color: var(--accent); }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-thumb:hover { border-color: var(--accent); }
+
+/* ── PRODUCT INFO ── */
+.product-info { display: flex; flex-direction: column; gap: 20px; }
+
+.product-store-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.store-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.store-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.store-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.product-store-row:hover .store-name { color: var(--accent); }
+
+.product-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.product-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stars {
+  display: flex;
+  gap: 2px;
+}
+.stars iconify-icon { font-size: 15px; color: #F59E0B; }
+.stars iconify-icon.empty { color: var(--border); }
+.rating-text {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.condition-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* Price block */
+.price-block { padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.price-main {
+  font-family: 'DM Mono', monospace;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.price-main.discounted { color: var(--accent); }
+.price-original {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  margin-left: 10px;
+}
+.price-savings {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--success);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.flash-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400E;
+  margin-top: 10px;
+}
+[data-theme="dark"] .flash-timer { color: #FCD34D; }
+.flash-timer iconify-icon { font-size: 16px; color: #F59E0B; }
+
+/* Variants */
+.variant-section { display: flex; flex-direction: column; gap: 16px; }
+.variant-type-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.variant-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.variant-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.variant-btn:hover { border-color: var(--accent); color: var(--accent); }
+.variant-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.variant-btn.out-of-stock {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* Color variant */
+.color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  outline: 2px solid transparent;
+}
+.color-btn.selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Quantity + CTA */
+.qty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.qty-btn {
+  width: 40px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-alt);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text);
+  transition: background 0.15s;
+  font-family: 'Satoshi', sans-serif;
+}
+.qty-btn:hover { background: var(--border); }
+.qty-num {
+  width: 48px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  border-left: 1.5px solid var(--border);
+  border-right: 1.5px solid var(--border);
+}
+.btn-add-cart {
+  flex: 1;
+  padding: 14px 24px;
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.btn-add-cart:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-add-cart:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-wishlist {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-muted);
+}
+.btn-wishlist:hover { border-color: var(--danger); color: var(--danger); }
+.btn-wishlist.active { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.08); }
+.btn-wishlist iconify-icon { font-size: 20px; }
+
+/* Stock indicator */
+.stock-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+.stock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.stock-dot.in { background: var(--success); }
+.stock-dot.low { background: var(--warning); }
+.stock-dot.out { background: var(--danger); }
+
+/* Delivery info */
+.delivery-info {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.delivery-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.delivery-row iconify-icon { font-size: 16px; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+
+/* ── PRODUCT TABS ── */
+.product-tabs { margin-bottom: 32px; }
+.tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.tab-btn {
+  padding: 12px 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover { color: var(--text); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Description */
+.product-description {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.8;
+  max-width: 720px;
+}
+
+/* Reviews */
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.overall-rating {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rating-big {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.review-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.reviewer-info { display: flex; align-items: center; gap: 10px; }
+.reviewer-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.reviewer-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.review-date {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.review-stars { display: flex; gap: 2px; }
+.review-stars iconify-icon { font-size: 13px; color: #F59E0B; }
+.review-body {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.review-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  margin-top: 10px;
+}
+.seller-reply {
+  background: var(--surface-alt);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  margin-top: 12px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.seller-reply strong { color: var(--text); font-weight: 600; }
+
+/* Related products */
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .product-main { grid-template-columns: 1fr; gap: 28px; }
+  .gallery-wrap { position: static; }
+  .product-title { font-size: 24px; }
+  .price-main { font-size: 28px; }
+  .product-wrap { padding: 20px 16px; }
+  .breadcrumb { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="product-wrap">
+
+  {# Breadcrumb #}
+  <nav class="breadcrumb">
+    <a href="/">Home</a>
+    <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+    <a href="/marketplace/">Marketplace</a>
+    <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+    <a href="{% url 'core:category' product.category.slug %}">{{ product.category.name }}</a>
+    {% if product.category.parent %}
+    <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+    <a href="{% url 'core:category' product.category.parent.slug %}">{{ product.category.parent.name }}</a>
+    {% endif %}
+    <iconify-icon icon="heroicons:chevron-right"></iconify-icon>
+    <span style="color:var(--text);font-weight:500;">{{ product.name|truncatechars:40 }}</span>
+  </nav>
+
+  {# ── PRODUCT MAIN ── #}
+<script>
+  function productData() {
+    return {
+      activeImg: '{% with primary=product.images.all|first %}{% if primary %}{{ primary.image.url|escapejs }}{% endif %}{% endwith %}',
+      selectedVariants: {},
+      qty: 1,
+      selectedSku: null,
+      skuMap: {{ sku_map|safe }},
+      inWishlist: {% if in_wishlist %}true{% else %}false{% endif %},
+      getSkuKey() {
+  const vals = Object.values(this.selectedVariants).map(Number).sort((a, b) => a - b);
+  return vals.join('-');
+},
+      updateSku() {
+        const key = this.getSkuKey();
+        this.selectedSku = this.skuMap[key] || null;
+        if (this.selectedSku && this.qty > this.selectedSku.stock) {
+          this.qty = Math.max(1, this.selectedSku.stock);
+        }
+      },
+      selectVariant(typeId, optionId) {
+        this.selectedVariants[typeId] = String(optionId);
+        this.updateSku();
+      },
+      isVariantSelected(typeId, optionId) {
+        return this.selectedVariants[typeId] === String(optionId);
+      },
+      get currentPrice() {
+        if (this.selectedSku) return this.selectedSku.price;
+        return {{ product.effective_price|default:0 }};
+      },
+      get currentStock() {
+        if (this.selectedSku) return this.selectedSku.stock;
+        return {{ product.total_stock|default:0 }};
+      },
+      get canAddToCart() {
+        const allSelected = Object.keys(this.selectedVariants).length >= {{ variant_type_count|default:0 }};
+        return allSelected && this.selectedSku && this.selectedSku.stock > 0 && this.qty <= this.selectedSku.stock;
+      },
+      incQty() { if (this.qty < (this.selectedSku ? this.selectedSku.stock : 10)) this.qty++; },
+      decQty() { if (this.qty > 1) this.qty--; },
+      async toggleWishlist() {
+        {% if user.is_authenticated %}
+        try {
+          const r = await fetch('/wishlist/toggle/{{ product.pk }}/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          });
+          const d = await r.json();
+          this.inWishlist = d.in_wishlist;
+        } catch(e) {}
+        {% else %}
+        window.location.href = '/auth/login/';
+        {% endif %}
+      }
+    };
+  }
+  </script>
+
+  <div class="product-main" x-data="productData()">
+    {# ── GALLERY ── #}
+    <div class="gallery-wrap">
+      <div class="gallery-main">
+        <template x-if="activeImg">
+          <img :src="activeImg" alt="{{ product.name }}">
+        </template>
+        <template x-if="!activeImg">
+          <div class="gallery-main-placeholder">
+            <iconify-icon icon="heroicons:photo"></iconify-icon>
+            <span style="font-family:'Satoshi',sans-serif;font-size:13px;">No image</span>
+          </div>
+        </template>
+        {% if product.is_flash_sale %}<span class="gallery-badge flash">⚡ FLASH SALE</span>
+        {% elif product.discount_percent > 0 %}<span class="gallery-badge sale">{{ product.discount_percent }}% OFF</span>
+        {% endif %}
+      </div>
+
+      {% if product.images.all|length > 1 %}
+      <div class="gallery-thumbs">
+        {% for img in product.images.all %}
+        <div class="gallery-thumb {% if forloop.first %}active{% endif %}"
+             @click="activeImg = '{{ img.image.url }}'; $el.closest('.gallery-thumbs').querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active')); $el.classList.add('active')">
+          <img src="{{ img.image.url }}" alt="{{ product.name }} image {{ forloop.counter }}">
         </div>
         {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
-        <h3>Add to Cart</h3>
-    {% for sku in skus %}
-    <form method="post" action="{% url 'orders:cart_add' sku.pk %}">
-        {% csrf_token %}
-        <input type="hidden" name="quantity" value="1">
-        <button type="submit">
-            Add to Cart — ₦{{ sku.effective_price }}
-            ({{ sku.stock }} in stock)
-        </button>
-    </form>
-    {% endfor %}
+    {# ── PRODUCT INFO ── #}
+    <div class="product-info">
 
-<a href="{% url 'orders:cart' %}">View Cart</a>
+      {# Store #}
+      <a href="{% url 'stores:store_detail' product.seller.store_slug %}" class="product-store-row">
+        <div class="store-avatar">
+          {% if product.seller.logo %}
+          <img src="{{ product.seller.logo.url }}" alt="{{ product.seller.store_name }}">
+          {% else %}
+          <iconify-icon icon="heroicons:building-storefront" style="font-size:16px;color:var(--text-muted);"></iconify-icon>
+          {% endif %}
+        </div>
+        <span class="store-name">{{ product.seller.store_name }}</span>
+        <iconify-icon icon="heroicons:arrow-top-right-on-square" style="font-size:13px;color:var(--text-muted);margin-left:2px;"></iconify-icon>
+      </a>
 
-    <h3>Reviews ({{ product.rating_count }})</h3>
-    {% for review in reviews %}
-    <div>
-        <strong>{{ review.buyer.get_short_name }}</strong>
-        — {{ review.rating }}★
-        <p>{{ review.comment }}</p>
+      {# Title #}
+      <h1 class="product-title">{{ product.name }}</h1>
+
+      {# Rating + Condition #}
+      <div class="product-rating-row">
+        {% if product.rating_count > 0 %}
+        <div class="stars">
+          {% for i in "12345" %}
+            {% if forloop.counter <= product.rating_avg %}
+            <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+            {% else %}
+            <iconify-icon icon="heroicons:star" class="empty"></iconify-icon>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <span class="rating-text">{{ product.rating_avg|floatformat:1 }} ({{ product.rating_count }} review{{ product.rating_count|pluralize }})</span>
+        {% endif %}
+        <span class="condition-badge">
+          <iconify-icon icon="heroicons:check-badge" style="font-size:14px;"></iconify-icon>
+          {{ product.get_condition_display }}
+        </span>
+      </div>
+
+      {# Price #}
+      <div class="price-block">
+        <div>
+          <span class="price-main {% if product.discount_percent > 0 or product.is_flash_sale %}discounted{% endif %}"
+                x-text="'₦' + currentPrice.toLocaleString('en-NG', {minimumFractionDigits:0})">
+            ₦{{ product.effective_price|floatformat:0|intcomma }}
+          </span>
+          {% if product.discount_percent > 0 %}
+          <span class="price-original">₦{{ product.base_price|floatformat:0|intcomma }}</span>
+          {% endif %}
+        </div>
+          {% if product.discount_percent > 0 %}
+        <div class="price-savings">
+          You save ₦{% widthratio product.discount_percent 100 product.base_price %}{% if False %}{% endif %}
+        </div>
+        {% endif %}
+
+        {% if product.is_flash_sale and product.flash_sale_end %}
+        <div class="flash-timer">
+          <iconify-icon icon="heroicons:bolt"></iconify-icon>
+          Flash sale ends {{ product.flash_sale_end|date:"M d, H:i" }}
+        </div>
+        {% endif %}
+      </div>
+      {# Variants #}
+      {% if variant_groups %}
+      <div class="variant-section">
+        {% for type_name, options in variant_groups.items %}
+        <div>
+          <div class="variant-type-label">{{ type_name }}</div>
+          <div class="variant-options">
+            {% for opt in options %}
+            <button
+              type="button"
+              class="variant-btn"
+              :class="{ 'selected': isVariantSelected('{{ opt.type_id }}', '{{ opt.option_id }}') }"
+              @click="selectVariant('{{ opt.type_id }}', '{{ opt.option_id }}')"
+            >{{ opt.value }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {# Stock #}
+      <div class="stock-indicator">
+        <div class="stock-dot" :class="currentStock > 3 ? 'in' : currentStock > 0 ? 'low' : 'out'"></div>
+        <span style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);"
+              x-text="currentStock > 3 ? 'In stock' : currentStock > 0 ? 'Only ' + currentStock + ' left' : 'Out of stock'">
+          {% if product.total_stock > 3 %}In stock
+          {% elif product.total_stock > 0 %}Only {{ product.total_stock }} left
+          {% else %}Out of stock{% endif %}
+        </span>
+      </div>
+
+      {# Qty + Add to cart #}
+      <div>
+        <div class="qty-row" style="margin-bottom:12px;">
+          <div class="qty-control">
+            <button type="button" class="qty-btn" @click="decQty()">−</button>
+            <div class="qty-num" x-text="qty">1</div>
+            <button type="button" class="qty-btn" @click="incQty()">+</button>
+          </div>
+          <form method="post"
+                :action="selectedSku ? '/orders/cart/add/' + selectedSku.id + '/' : '#'"
+                style="flex:1;display:flex;gap:10px;">
+            {% csrf_token %}
+            <input type="hidden" name="quantity" :value="qty">
+            <button
+              type="submit"
+              class="btn-add-cart"
+              :disabled="!canAddToCart"
+            >
+              <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
+              <span x-text="selectedSku ? 'Add to cart' : 'Select variant'">
+                {% if product.total_stock > 0 %}Add to cart{% else %}Out of stock{% endif %}
+              </span>
+            </button>
+          </form>
+          <button
+            type="button"
+            class="btn-wishlist"
+            :class="{ 'active': inWishlist }"
+            @click="toggleWishlist()"
+            :title="inWishlist ? 'Remove from wishlist' : 'Add to wishlist'"
+          >
+            <iconify-icon :icon="inWishlist ? 'heroicons:heart-solid' : 'heroicons:heart'"></iconify-icon>
+          </button>
+        </div>
+      </div>
+
+      {# Delivery info #}
+      <div class="delivery-info">
+        <div class="delivery-row">
+          <iconify-icon icon="heroicons:truck"></iconify-icon>
+          <span>Delivery available within <strong>{{ product.seller.delivery_zones.all|length }} state{{ product.seller.delivery_zones.all|length|pluralize }}</strong> — same state & borders</span>
+        </div>
+        <div class="delivery-row">
+          <iconify-icon icon="heroicons:shield-check"></iconify-icon>
+          <span>Buyer protection on all orders. Open a dispute if your item doesn't arrive.</span>
+        </div>
+        {% if product.seller.whatsapp_number %}
+        <div class="delivery-row">
+          <iconify-icon icon="mdi:whatsapp"></iconify-icon>
+          <span>
+            <a href="https://wa.me/{{ product.seller.whatsapp_number }}" target="_blank"
+               style="color:var(--accent);text-decoration:none;font-weight:600;">
+              Chat with seller on WhatsApp
+            </a>
+          </span>
+        </div>
+        {% endif %}
+      </div>
+
     </div>
-    {% empty %}
-    <p>No reviews yet.</p>
-    {% endfor %}
-</body>
-</html>
+  </div>
+
+  {# ── TABS: Description / Reviews ── #}
+  <div class="product-tabs" x-data="{ activeTab: 'description' }">
+    <div class="tab-nav">
+      <button class="tab-btn" :class="{ active: activeTab === 'description' }" @click="activeTab = 'description'">
+        Description
+      </button>
+      <button class="tab-btn" :class="{ active: activeTab === 'reviews' }" @click="activeTab = 'reviews'">
+        Reviews ({{ product.rating_count }})
+      </button>
+    </div>
+
+    {# Description tab #}
+    <div class="tab-panel" :class="{ active: activeTab === 'description' }">
+      <div class="product-description">
+        {{ product.description|linebreaks }}
+      </div>
+    </div>
+
+    {# Reviews tab #}
+    <div class="tab-panel" :class="{ active: activeTab === 'reviews' }">
+      {% if product.rating_count > 0 %}
+      <div class="reviews-header">
+        <div class="overall-rating">
+          <div class="rating-big">{{ product.rating_avg|floatformat:1 }}</div>
+          <div>
+            <div class="stars" style="margin-bottom:4px;">
+              {% for i in "12345" %}
+                {% if forloop.counter <= product.rating_avg %}
+                <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+                {% else %}
+                <iconify-icon icon="heroicons:star" class="empty"></iconify-icon>
+                {% endif %}
+              {% endfor %}
+            </div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+              {{ product.rating_count }} review{{ product.rating_count|pluralize }}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-card-header">
+          <div class="reviewer-info">
+            <div class="reviewer-avatar">{{ review.buyer.get_short_name|first|upper }}</div>
+            <div>
+              <div class="reviewer-name">{{ review.buyer.get_short_name }}</div>
+              <div class="review-date">{{ review.created_at|date:"M d, Y" }}</div>
+            </div>
+          </div>
+          <div class="review-stars">
+            {% for i in "12345" %}
+              {% if forloop.counter <= review.rating %}
+              <iconify-icon icon="heroicons:star-solid"></iconify-icon>
+              {% else %}
+              <iconify-icon icon="heroicons:star" style="color:var(--border);"></iconify-icon>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <p class="review-body">{{ review.comment }}</p>
+        {% if review.photo %}
+        <img src="{{ review.photo.url }}" alt="Review photo" class="review-photo">
+        {% endif %}
+        {% if review.seller_reply %}
+        <div class="seller-reply">
+          <strong>{{ product.seller.store_name }} replied:</strong><br>
+          {{ review.seller_reply }}
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:48px 0;color:var(--text-muted);">
+        <iconify-icon icon="heroicons:chat-bubble-left-ellipsis" style="font-size:40px;display:block;margin-bottom:12px;"></iconify-icon>
+        <p style="font-family:'Satoshi',sans-serif;font-size:14px;">No reviews yet. Be the first to review this product.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── RELATED PRODUCTS ── #}
+  {% if related_products %}
+  <div style="margin-top:48px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;">
+      <h2 style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.02em;">
+        More from {{ product.category.name }}
+      </h2>
+      <a href="{% url 'core:category' product.category.slug %}" style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:4px;">
+        See all <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+      </a>
+    </div>
+    <div class="related-grid">
+      {% for rp in related_products %}
+      <a href="{% url 'products:detail' rp.slug %}" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;color:var(--text);display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none'">
+        <div style="width:100%;height:180px;overflow:hidden;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;">
+          {% with rp_img=rp.images.all|first %}
+          {% if rp_img %}
+          <img src="{{ rp_img.image.url }}" alt="{{ rp.name }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+          <iconify-icon icon="heroicons:photo" style="font-size:36px;color:var(--text-muted);"></iconify-icon>
+          {% endif %}
+          {% endwith %}
+        </div>
+        <div style="padding:12px;">
+          <div style="font-size:11px;color:var(--text-muted);font-family:'Satoshi',sans-serif;margin-bottom:3px;">{{ rp.seller.store_name }}</div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ rp.name }}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent);">₦{{ rp.effective_price|floatformat:0|intcomma }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  gsap.from('.product-main', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' });
+</script>
+{% endblock %}

@@ -43,6 +43,30 @@ class ProductAdmin(admin.ModelAdmin):
         'search_vector', 'created_at', 'updated_at'
     ]
 
+    def save_model(self, request, obj, form, change):
+        # 🏪 Auto-assign Nexo Official store if no seller selected
+        # Admin never needs to manually pick a seller — they ARE the store
+        if not obj.seller_id:
+            from apps.stores.models import SellerProfile
+            nexo_store, created = SellerProfile.objects.get_or_create(
+                user=request.user,
+                defaults={
+                    'store_name': 'Nexo Official',
+                    'store_slug': 'nexo-official',
+                    'status': 'active',
+                    'is_approved': True,
+                }
+            )
+            obj.seller = nexo_store
+        super().save_model(request, obj, form, change)
+
+    def get_fields(self, request, obj=None):
+        # 🙈 Hide seller field from admin — auto-assigned on save
+        fields = super().get_fields(request, obj)
+        if request.user.is_superuser:
+            return [f for f in fields if f != 'seller']
+        return fields
+
 
 @admin.register(ProductSKU)
 class ProductSKUAdmin(admin.ModelAdmin):

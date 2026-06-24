@@ -343,7 +343,8 @@ class Product(models.Model):
         # Check regular discount
         if self.discount_percent > 0:
             if not self.discount_until or self.discount_until > now:
-                discount = self.base_price * (self.discount_percent / 100)
+                from decimal import Decimal
+                discount = self.base_price * Decimal(self.discount_percent) / 100
                 return self.base_price - discount
 
         return self.base_price

@@ -428,14 +428,41 @@ def _send_seller_verification_email(request, user):
 def store_detail(request, store_slug):
     """Public seller storefront page"""
     from django.shortcuts import get_object_or_404
+    from django.core.paginator import Paginator
+    from apps.core.models import Coupon
+    from django.utils import timezone as tz
+
     store = get_object_or_404(
         SellerProfile,
         store_slug=store_slug,
         is_approved=True,
         status='active'
     )
-    products = store.products.filter(is_active=True).order_by('-created_at')
+
+    products_qs = store.products.filter(
+        is_active=True
+    ).prefetch_related('images').order_by('-created_at')
+
+    # Search within store
+    q = request.GET.get('q', '').strip()
+    if q:
+        products_qs = products_qs.filter(name__icontains=q)
+
+    paginator = Paginator(products_qs, 24)
+    page = request.GET.get('page', 1)
+    products = paginator.get_page(page)
+
+    # Active coupon for this store
+    now = tz.now()
+    active_coupon = Coupon.objects.filter(
+        seller=store,
+        is_active=True,
+        valid_from__lte=now,
+        valid_until__gte=now,
+    ).order_by('-discount_value').first()
+
     return render(request, 'stores/storefront.html', {
         'store': store,
         'products': products,
+        'active_coupon': active_coupon,
     })
