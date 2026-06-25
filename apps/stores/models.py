@@ -137,6 +137,17 @@ class SellerProfile(models.Model):
 
     show_newsletter = models.BooleanField(default=False)
 
+    class TrustBadgeStyle(models.TextChoices):
+        BAR = 'bar', 'Bar single dark strip with icons'
+        CARDS = 'cards', 'Cards individual rounded icon cards'
+
+    trust_badge_style = models.CharField(
+        max_length=6,
+        choices=TrustBadgeStyle.choices,
+        default=TrustBadgeStyle.BAR,
+        help_text='Visual style for the trust badges section'
+    )
+
     # ── BUSINESS VERIFICATION ────────────────────────────────
     account_type = models.CharField(
         max_length=10,

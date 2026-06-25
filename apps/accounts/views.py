@@ -422,3 +422,52 @@ def _send_password_reset_email(request, user):
         recipient_list=[user.email],
         fail_silently=False,
     )
+
+@login_required
+def user_profile(request):
+    """User settings and profile page"""
+    user = request.user
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'profile')
+
+        if action == 'update_profile':
+            full_name = request.POST.get('full_name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            currency = request.POST.get('currency_preference', 'NGN')
+
+            if full_name:
+                user.full_name = full_name
+            user.phone = phone
+            if currency in ['NGN', 'USD']:
+                user.currency_preference = currency
+            user.save(update_fields=['full_name', 'phone', 'currency_preference'])
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('accounts:profile')
+
+        elif action == 'change_password':
+            current_pw = request.POST.get('current_password', '')
+            new_pw = request.POST.get('new_password', '')
+            confirm_pw = request.POST.get('confirm_password', '')
+
+            if not user.check_password(current_pw):
+                messages.error(request, 'Current password is incorrect.')
+                return redirect('accounts:profile')
+            if len(new_pw) < 8:
+                messages.error(request, 'New password must be at least 8 characters.')
+                return redirect('accounts:profile')
+            if new_pw != confirm_pw:
+                messages.error(request, 'New passwords do not match.')
+                return redirect('accounts:profile')
+
+            user.set_password(new_pw)
+            user.save(update_fields=['password'])
+            # Re-login after password change
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Password changed successfully.')
+            return redirect('accounts:profile')
+
+    return render(request, 'accounts/profile.html', {
+        'user': user,
+    })

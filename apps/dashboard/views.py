@@ -349,8 +349,21 @@ def seller_store_settings(request):
         if hero_align in [c[0] for c in SellerProfile.HeroAlign.choices]:
             seller.hero_text_align = hero_align
 
-        seller.allow_pod = request.POST.get('allow_pod') == 'on'
-        seller.is_on_vacation = request.POST.get('is_on_vacation') == 'on'
+            # ── STOREFRONT SECTIONS (toggles + labels) ──
+            seller.show_bestsellers = request.POST.get('show_bestsellers') == 'on'
+            seller.bestsellers_label = request.POST.get('bestsellers_label', 'Bestsellers').strip()
+            seller.show_promo_banner = request.POST.get('show_promo_banner') == 'on'
+            seller.promo_banner_text = request.POST.get('promo_banner_text', '').strip()
+            seller.promo_banner_bg = request.POST.get('promo_banner_bg', '#1C0F0A').strip()
+            seller.show_new_arrivals = request.POST.get('show_new_arrivals') == 'on'
+            seller.new_arrivals_label = request.POST.get('new_arrivals_label', 'New Arrivals').strip()
+
+            trust_style = request.POST.get('trust_badge_style', 'bar').strip()
+            if trust_style in [c[0] for c in SellerProfile.TrustBadgeStyle.choices]:
+                seller.trust_badge_style = trust_style
+
+            seller.allow_pod = request.POST.get('allow_pod') == 'on'
+            seller.is_on_vacation = request.POST.get('is_on_vacation') == 'on'
         vacation_return = request.POST.get('vacation_return_date', '').strip()
         seller.vacation_return_date = vacation_return if vacation_return else None
 

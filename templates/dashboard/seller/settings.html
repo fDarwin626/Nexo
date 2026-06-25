@@ -537,58 +537,95 @@
           </select>
         </div>
       </div>
-
-      <div class="builder-card">
-        <div class="builder-card-title">Banner text</div>
-        <div class="builder-card-sub">The text overlay on your store header. Keep it short and punchy.</div>
+      <div class="builder-card" style="margin-bottom:24px;">
+        <div class="builder-card-title">Trust badge style</div>
+        <div class="builder-card-sub">Choose how the trust badges row looks on your storefront.</div>
         <div class="field-group">
-          <label class="field-label">Headline</label>
-          <input
-            type="text"
-            name="banner_headline"
-            class="field-input"
-            value="{{ seller.banner_headline }}"
-            placeholder="eg Premium Quality Footwear"
-            maxlength="60"
-            x-model="bannerText"
-          />
-          <p class="field-hint">Max 60 characters. Shows bold on banner.</p>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label">Subtext</label>
-          <input
-            type="text"
-            name="banner_subtext"
-            class="field-input"
-            value="{{ seller.banner_subtext }}"
-            placeholder="eg Free delivery within Lagos"
-            maxlength="120"
-          />
-          <p class="field-hint">Max 120 characters. Shows below headline.</p>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
-          <div class="field-group">
-            <label class="field-label">Banner background</label>
-            <input
-              type="color"
-              name="banner_bg_color"
-              value="{{ seller.banner_bg_color }}"
-              style="width:100%;height:44px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;padding:4px;"
-            />
-          </div>
-          <div class="field-group">
-            <label class="field-label">Accent color</label>
-            <input
-              type="color"
-              name="banner_accent_color"
-              value="{{ seller.banner_accent_color }}"
-              style="width:100%;height:44px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;padding:4px;"
-            />
-          </div>
+          <select name="trust_badge_style" class="field-input">
+            <option value="bar" {% if seller.trust_badge_style == 'bar' %}selected{% endif %}>Bar — single dark strip</option>
+            <option value="cards" {% if seller.trust_badge_style == 'cards' %}selected{% endif %}>Cards — individual icon cards</option>
+          </select>
         </div>
       </div>
+
+      <div class="builder-card" style="margin-bottom:24px;">
+        <div class="builder-card-title">Storefront sections</div>
+
+        <div class="builder-card-sub">Turn sections on or off and customise their labels.</div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Bestsellers</div>
+            <div class="toggle-sub">Shows your top-rated products</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="show_bestsellers" {% if seller.show_bestsellers %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <input
+            type="text"
+            name="bestsellers_label"
+            class="field-input"
+            value="{{ seller.bestsellers_label }}"
+            placeholder="Bestsellers"
+            maxlength="40"
+          />
+        </div>
+
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Promo banner</div>
+            <div class="toggle-sub">A highlighted strip for a sale or offer</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="show_promo_banner" {% if seller.show_promo_banner %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <input
+            type="text"
+            name="promo_banner_text"
+            class="field-input"
+            value="{{ seller.promo_banner_text }}"
+            placeholder="eg UP TO 40% OFF ON SELECTED ITEMS"
+            maxlength="80"
+          />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Promo background color</label>
+          <input
+            type="color"
+            name="promo_banner_bg"
+            value="{{ seller.promo_banner_bg }}"
+            style="width:100%;height:44px;border-radius:8px;border:1.5px solid var(--border);cursor:pointer;padding:4px;"
+          />
+        </div>
+
+        <div class="toggle-row" style="border-bottom:none;">
+          <div>
+            <div class="toggle-label">New Arrivals</div>
+            <div class="toggle-sub">Shows your most recently added products</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" name="show_new_arrivals" {% if seller.show_new_arrivals %}checked{% endif %}>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <input
+            type="text"
+            name="new_arrivals_label"
+            class="field-input"
+            value="{{ seller.new_arrivals_label }}"
+            placeholder="New Arrivals"
+            maxlength="40"
+          />
+        </div>
+      </div>
+
     </div>
 
   </div>

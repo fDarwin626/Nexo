@@ -225,13 +225,13 @@
 
 /* ── STICKY STORE SEARCH ── */
 .store-search-sticky {
-  position: fixed;
-  top: 64px;
-  left: 0;
+  position: absolute;
+  top: 0;
+  left:0;
   right: 0;
-  z-index: 999;
+  z-index: 5;
   background: transparent;
-  padding: 12px 24px;
+  padding: 20px 24px;
 }
 .store-search-sticky-inner {
   max-width: 1280px;
@@ -345,6 +345,63 @@
 }
 .trust-badge-icon iconify-icon { font-size: 24px; color: var(--bg); }
 [data-theme="dark"] .trust-badge-icon iconify-icon { color: var(--accent); }
+
+/* ── TRUST BADGES — INLINE BAR VARIANT (matches homepage trust bar) ── */
+.trust-badges-row.style-cards {
+  background: var(--surface-alt);
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  max-width: 100%;
+  padding: 16px 24px;
+  display: block;
+}
+[data-theme="dark"] .trust-badges-row.style-cards { background: var(--surface-alt); border: none; }
+.trust-badges-row.style-cards .trust-badges-items {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.trust-badges-row.style-cards .trust-badges-note { display: none; }
+.trust-badges-row.style-cards .trust-badge-item {
+  flex-direction: row;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  gap: 10px;
+  width: auto;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.trust-badges-row.style-cards .trust-badge-item + .trust-badge-item::before {
+  display: none;
+}
+.trust-badges-row.style-cards .trust-badge-icon {
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+.trust-badges-row.style-cards .trust-badge-icon iconify-icon {
+  font-size: 20px;
+  color: var(--accent);
+}
+@media (max-width: 768px) {
+  .trust-badges-row.style-cards .trust-badges-items {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .trust-badges-row.style-cards .trust-badge-item { white-space: nowrap; }
+}
+
+
 /* ── PROMO BANNER ── */
 .promo-banner {
   border-radius: 16px;
@@ -399,77 +456,93 @@
   .section-block { padding: 28px 0; }
 }
 
-/* ── ACTIVE COUPON STRIP ── */
+/* ── ACTIVE COUPON — TICKET/VOUCHER STYLE ── */
 .coupon-strip {
-  background: linear-gradient(135deg, var(--accent-soft), var(--surface-alt));
-  border: 1.5px solid var(--border);
-  border-radius: 14px;
-  padding: 20px 24px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin-bottom: 32px;
-  flex-wrap: wrap;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  max-width: 560px;
 }
-.coupon-strip-left { display: flex; align-items: center; gap: 16px; }
-.coupon-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: var(--accent);
+.coupon-strip-left {
+  flex: 1;
+  background: var(--surface);
+  border: 1.5px dashed var(--border);
+  border-right: none;
+  padding: 22px 24px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
 }
-.coupon-icon iconify-icon { font-size: 22px; color: #FAF7F5; }
 .coupon-title {
   font-family: 'Clash Display', sans-serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  text-transform: uppercase;
 }
 .coupon-sub {
   font-family: 'Satoshi', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-top: 2px;
 }
 .coupon-code-wrap {
+  background: var(--accent);
+  flex: 0 0 150px;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  padding: 16px;
+  position: relative;
+}
+.coupon-code-wrap::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: var(--bg);
+  border-radius: 50%;
+}
+.coupon-code-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(250,247,245,0.75);
 }
 .coupon-code {
   font-family: 'DM Mono', monospace;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--accent);
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 16px;
-  letter-spacing: 0.06em;
+  font-size: 15px;
+  font-weight: 600;
+  color: #FAF7F5;
+  letter-spacing: 0.04em;
+  text-align: center;
 }
 .coupon-copy-btn {
-  padding: 8px 16px;
-  background: var(--accent);
+  padding: 6px 14px;
+  background: rgba(250,247,245,0.15);
   color: #FAF7F5;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-family: 'Satoshi', sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: background 0.2s;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
-.coupon-copy-btn:hover { opacity: 0.88; }
-
+.coupon-copy-btn:hover { background: rgba(250,247,245,0.28); }
 /* ── PRODUCTS GRID ── */
 .products-grid {
   display: grid;
@@ -649,6 +722,23 @@
   {% if store.header_image %}
   <img src="{{ store.header_image.image.url }}" alt="{{ store.store_name }}" class="main-hero-img">
   {% endif %}
+
+  {# ── STORE SEARCH (overlays top of hero, beside logo) ── #}
+  <div class="store-search-sticky">
+    <div class="store-search-sticky-inner">
+      <form method="get">
+        <iconify-icon icon="heroicons:magnifying-glass" class="search-icon-pos"></iconify-icon>
+        <input
+          type="search"
+          name="q"
+          value="{{ request.GET.q|default:'' }}"
+          placeholder="Search this store..."
+        />
+      </form>
+      <div class="store-search-count">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</div>
+    </div>
+  </div>
+
   <div class="main-hero-text">
     {% if store.hero_headline %}
     <h1 class="main-hero-headline">{{ store.hero_headline }}</h1>
@@ -664,24 +754,9 @@
   </div>
 </div>
 
-{# ── STICKY STORE SEARCH (overlays hero like main navbar) ── #}
-<div class="store-search-sticky">
-  <div class="store-search-sticky-inner">
-    <form method="get">
-      <iconify-icon icon="heroicons:magnifying-glass" class="search-icon-pos"></iconify-icon>
-      <input
-        type="search"
-        name="q"
-        value="{{ request.GET.q|default:'' }}"
-        placeholder="Search this store..."
-      />
-    </form>
-    <div class="store-search-count">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</div>
-  </div>
-</div>
 
 {# ── TRUST BADGES ── #}
-<div class="trust-badges-row">
+<div class="trust-badges-row style-{{ store.trust_badge_style|default:'bar' }}">
   <div class="trust-badges-items">
     <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:shield-check"></iconify-icon></div> Premium Quality</div>
     <div class="trust-badge-item"><div class="trust-badge-icon"><iconify-icon icon="heroicons:truck"></iconify-icon></div> Free Delivery</div>
@@ -853,22 +928,18 @@
     </div>
     {% endif %}
 
-    {% if active_coupon %}
+  {% if active_coupon %}
     <div class="coupon-strip" x-data="{ copied: false }" style="margin-top:32px;">
       <div class="coupon-strip-left">
-        <div class="coupon-icon">
-          <iconify-icon icon="heroicons:tag"></iconify-icon>
+        <div class="coupon-title">{{ active_coupon.discount_value|floatformat:0 }}% OFF</div>
+        <div class="coupon-sub">
+          Use at checkout
+          {% if active_coupon.min_order_amount %} — min order ₦{{ active_coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
         </div>
-        <div>
-          <div class="coupon-title">{{ active_coupon.discount_value|floatformat:0 }}% OFF</div>
-          <div class="coupon-sub">
-            Use at checkout
-            {% if active_coupon.min_order_amount %} — min order ₦{{ active_coupon.min_order_amount|floatformat:0|intcomma }}{% endif %}
-            · Ends {{ active_coupon.valid_until|date:"M d" }}
-          </div>
-        </div>
+        <div class="coupon-sub">Ends {{ active_coupon.valid_until|date:"M d" }}</div>
       </div>
       <div class="coupon-code-wrap">
+        <div class="coupon-code-label">Voucher</div>
         <div class="coupon-code">{{ active_coupon.code }}</div>
         <button
           class="coupon-copy-btn"
@@ -880,7 +951,6 @@
       </div>
     </div>
     {% endif %}
-
   </div>
 
   {# ── ABOUT TAB ── #}

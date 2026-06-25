@@ -1,0 +1,140 @@
+{% extends "base/base_seller.html" %}
+{% load humanize %}
+
+{% block title %}Create Coupon — {{ seller.store_name }}{% endblock %}
+{% block nav_coupons %}active{% endblock %}
+
+{% block seller_extra_head %}
+<style>
+.coupon-form-card {
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+}
+.field-group { margin-bottom: 18px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.field-hint {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+.save-btn {
+  padding: 12px 24px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.save-btn:hover { opacity: 0.88; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+</style>
+{% endblock %}
+
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Create Coupon</div>
+    <div class="seller-page-sub">Set up a discount code for your store</div>
+  </div>
+  <a href="/dashboard/seller/coupons/" class="btn-ghost" style="padding:9px 18px;font-size:13px;">
+    <iconify-icon icon="heroicons:arrow-left"></iconify-icon>
+    Back to coupons
+  </a>
+</div>
+
+<div class="coupon-form-card">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="field-group">
+      <label class="field-label">Discount percentage</label>
+      <input
+        type="number"
+        name="discount_value"
+        class="field-input"
+        placeholder="eg 20"
+        min="5"
+        max="50"
+        step="1"
+        required
+      />
+      <p class="field-hint">Must be between 5% and 50%.</p>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Minimum order amount (optional)</label>
+      <input
+        type="number"
+        name="min_order_amount"
+        class="field-input"
+        placeholder="eg 20000"
+        min="0"
+        step="100"
+      />
+      <p class="field-hint">Leave blank for no minimum.</p>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Maximum uses</label>
+      <input
+        type="number"
+        name="max_uses"
+        class="field-input"
+        value="100"
+        min="1"
+        required
+      />
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Valid from</label>
+        <input type="date" name="valid_from" class="field-input" required />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Valid until</label>
+        <input type="date" name="valid_until" class="field-input" required />
+      </div>
+    </div>
+
+    <button type="submit" class="save-btn">
+      <iconify-icon icon="heroicons:check"></iconify-icon>
+      Create coupon
+    </button>
+  </form>
+</div>
+{% endblock %}
