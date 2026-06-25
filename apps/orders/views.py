@@ -185,10 +185,8 @@ def cart_add(request, sku_id):
     cart = get_or_create_cart(request)
 
     existing_item = cart.items.filter(sku=sku).first()
-
     if existing_item:
         new_quantity = existing_item.quantity + quantity
-        # Validate against stock
         if new_quantity > sku.stock:
             return JsonResponse({
                 'success': False,

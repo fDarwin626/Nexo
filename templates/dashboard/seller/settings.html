@@ -478,12 +478,69 @@
       </div>
     </div>
 
-    {# Right column — Banner #}
+        {# Right column — Banner #}
     <div>
+      <div class="builder-card" style="margin-bottom:24px;">
+        <div class="builder-card-title">Hero section</div>
+        <div class="builder-card-sub">The big headline area at the top of your store. This is what buyers see first.</div>
+
+        <div class="field-group">
+          <label class="field-label">Headline</label>
+          <input
+            type="text"
+            name="hero_headline"
+            class="field-input"
+            value="{{ seller.hero_headline }}"
+            placeholder="eg NEW SEASON NEW STYLE"
+            maxlength="80"
+          />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Subtext</label>
+          <input
+            type="text"
+            name="hero_subtext"
+            class="field-input"
+            value="{{ seller.hero_subtext }}"
+            placeholder="eg Modern outfits for every mood"
+            maxlength="160"
+          />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Button text</label>
+          <input
+            type="text"
+            name="hero_cta_text"
+            class="field-input"
+            value="{{ seller.hero_cta_text }}"
+            placeholder="eg Shop Now"
+            maxlength="30"
+          />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Layout style</label>
+          <select name="hero_layout_style" class="field-input">
+            <option value="split" {% if seller.hero_layout_style == 'split' %}selected{% endif %}>Split — image with text overlay</option>
+            <option value="overlay" {% if seller.hero_layout_style == 'overlay' %}selected{% endif %}>Overlay — text floats on full image</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Text alignment</label>
+          <select name="hero_text_align" class="field-input">
+            <option value="left" {% if seller.hero_text_align == 'left' %}selected{% endif %}>Left</option>
+            <option value="center" {% if seller.hero_text_align == 'center' %}selected{% endif %}>Center</option>
+            <option value="right" {% if seller.hero_text_align == 'right' %}selected{% endif %}>Right</option>
+          </select>
+        </div>
+      </div>
+
       <div class="builder-card">
         <div class="builder-card-title">Banner text</div>
         <div class="builder-card-sub">The text overlay on your store header. Keep it short and punchy.</div>
-
         <div class="field-group">
           <label class="field-label">Headline</label>
           <input

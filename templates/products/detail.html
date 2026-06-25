@@ -545,7 +545,24 @@
       selectedVariants: {},
       qty: 1,
       selectedSku: null,
+      cartVariantMap: {{ cart_variant_map|safe }},
       init() {
+        const skuKeys = Object.keys(this.skuMap);
+
+        // No-variant product — auto-resolve the only SKU
+        if ({{ variant_type_count|default:0 }} === 0 && skuKeys.length >= 1) {
+          this.selectedSku = this.skuMap[skuKeys[0]];
+        }
+
+        // Variant product — pre-select variant buttons if SKU is in cart
+        // (qty always starts at 1 — user adjusts from there)
+        for (const [skuId, variants] of Object.entries(this.cartVariantMap)) {
+          for (const v of variants) {
+            this.selectedVariants[v.type_id] = v.option_id;
+          }
+          break;
+        }
+
         this.updateSku();
       },
       skuMap: {{ sku_map|safe }},
@@ -557,15 +574,37 @@
     },
     updateSku() {
       const key = this.getSkuKey();
-      console.log('SKU key:', key, '| Map keys:', Object.keys(this.skuMap));
+     // console.log('SKU key:', key, '| Map keys:', Object.keys(this.skuMap));
       this.selectedSku = this.skuMap[key] !== undefined ? this.skuMap[key] : null;
-      if (this.selectedSku && this.qty > this.selectedSku.stock) {
-        this.qty = Math.max(1, this.selectedSku.stock);
+      if (this.selectedSku) {
+        const savedQty = this.cartQtyMap[String(this.selectedSku.id)];
+        if (savedQty) this.qty = savedQty;
+        if (this.qty > this.selectedSku.stock) {
+          this.qty = Math.max(1, this.selectedSku.stock);
+        }
       }
     },
-    selectVariant(typeId, optionId) {
+selectVariant(typeId, optionId) {
   this.selectedVariants[String(typeId)] = String(optionId);
   this.updateSku();
+},
+csrfToken: '{{ csrf_token }}',
+async addToCart() {
+  if (!this.canAddToCart || !this.selectedSku) return;
+  try {
+    const fd = new FormData();
+    fd.append('quantity', this.qty);
+    fd.append('csrfmiddlewaretoken', this.csrfToken);
+    const r = await fetch('/orders/cart/add/' + this.selectedSku.id + '/', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.success) {
+      showToast('Added to cart!', 'success');
+      const badge = document.querySelector('[data-cart-count]');
+      if (badge && d.cart_count) badge.textContent = d.cart_count;
+    } else {
+      showToast(d.message || 'Could not add to cart', 'error');
+    }
+  } catch(e) { showToast('Something went wrong', 'error'); }
 },
 
       isVariantSelected(typeId, optionId) {
@@ -587,6 +626,7 @@
 
       incQty() { if (this.qty < (this.selectedSku ? this.selectedSku.stock : 10)) this.qty++; },
       decQty() { if (this.qty > 1) this.qty--; },
+
       async toggleWishlist() {
         {% if user.is_authenticated %}
         try {
@@ -731,29 +771,33 @@
 
       {# Qty + Add to cart #}
       <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);">Quantity</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent);"
+                x-show="qty > 1"
+                x-text="'Total: ₦' + (currentPrice * qty).toLocaleString('en-NG', {minimumFractionDigits:0})"></span>
+        </div>
         <div class="qty-row" style="margin-bottom:12px;">
           <div class="qty-control">
             <button type="button" class="qty-btn" @click="decQty()">−</button>
             <div class="qty-num" x-text="qty">1</div>
             <button type="button" class="qty-btn" @click="incQty()">+</button>
           </div>
-          <form method="post"
-                :action="selectedSku ? '/orders/cart/add/' + selectedSku.id + '/' : '#'"
-                @submit="if (selectedSku) { $el.action = '/orders/cart/add/' + selectedSku.id + '/'; } else { $event.preventDefault(); }"
-                style="flex:1;display:flex;gap:10px;">
-            {% csrf_token %}
-            <input type="hidden" name="quantity" :value="qty">
+
+          <div style="flex:1;display:flex;gap:10px;">
             <button
-              type="submit"
+              type="button"
               class="btn-add-cart"
               :disabled="!canAddToCart"
+              @click="addToCart()"
             >
               <iconify-icon icon="heroicons:shopping-bag"></iconify-icon>
-              <span x-text="selectedSku ? 'Add to cart' : 'Select variant'">
+              <span x-text="canAddToCart ? (selectedSku ? 'Add to cart' : 'Select variant') : (selectedSku === null ? 'Select variant' : 'Out of stock')">
                 {% if product.total_stock > 0 %}Add to cart{% else %}Out of stock{% endif %}
               </span>
             </button>
-          </form>
+          </div>
+
           <button
             type="button"
             class="btn-wishlist"
@@ -914,5 +958,22 @@
 {% block extra_scripts %}
 <script>
   gsap.from('.product-main', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' });
+
+  function showToast(message, type = 'success') {
+    let container = document.getElementById('nexo-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'nexo-toast-container';
+      container.style.cssText = 'position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:9999;pointer-events:none;';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    const isSuccess = type === 'success';
+    toast.style.cssText = `display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--surface);border:1.5px solid ${isSuccess ? 'var(--success)' : 'var(--danger)'};border-radius:12px;font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:${isSuccess ? 'var(--success)' : 'var(--danger)'};box-shadow:0 4px 20px rgba(0,0,0,0.08);pointer-events:auto;opacity:0;transform:translateY(8px);transition:opacity 0.2s ease,transform 0.2s ease;min-width:220px;max-width:320px;`;
+    toast.innerHTML = `<iconify-icon icon="${isSuccess ? 'heroicons:check-circle' : 'heroicons:x-circle'}" style="font-size:20px;flex-shrink:0;"></iconify-icon><span>${message}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }));
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; setTimeout(() => toast.remove(), 200); }, 3000);
+  }
 </script>
 {% endblock %}

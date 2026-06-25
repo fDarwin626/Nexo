@@ -14,7 +14,10 @@
   grid-template-columns: 1fr 340px;
   gap: 28px;
   align-items: start;
+  padding-top: 40px;
+
 }
+
 .cart-main-title {
   font-family: 'Clash Display', sans-serif;
   font-size: 28px;
@@ -150,6 +153,7 @@
   padding: 24px;
   position: sticky;
   top: 88px;
+  align-self: start;
 }
 .summary-title {
   font-family: 'Clash Display', sans-serif;
@@ -218,12 +222,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="cart-wrap">
+  <div class="cart-wrap">
+<div id="nexo-toast-container" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:9999;pointer-events:none;"></div>
 
   <div>
-    <h1 class="cart-main-title">
+<h1 class="cart-main-title">
       Cart
-      <span style="font-family:'Satoshi',sans-serif;font-size:16px;font-weight:400;color:var(--text-muted);">{{ cart.total_items }} item{{ cart.total_items|pluralize }}</span>
+      <iconify-icon icon="raphael:cart" style="font-size:28px;color:var(--accent);vertical-align:middle;margin-left:8px;"></iconify-icon>
     </h1>
 
     {% if items %}
@@ -258,23 +263,17 @@
             {% for opt in item.sku.variant_options.all %}{{ opt.variant_type.name }}: {{ opt.value }}{% if not forloop.last %} · {% endif %}{% endfor %}
           </div>
           {% endif %}
-          <div class="cart-qty-control">
-            <form method="post" action="/orders/cart/update/{{ item.pk }}/" style="display:contents;">
-              {% csrf_token %}
-              <input type="hidden" name="quantity" value="{{ item.quantity|add:'-1' }}">
-              <button type="submit" class="cart-qty-btn">−</button>
-            </form>
-            <div class="cart-qty-num">{{ item.quantity }}</div>
-            <form method="post" action="/orders/cart/update/{{ item.pk }}/" style="display:contents;">
-              {% csrf_token %}
-              <input type="hidden" name="quantity" value="{{ item.quantity|add:'1' }}">
-              <button type="submit" class="cart-qty-btn">+</button>
-            </form>
-          </div>
+          <div class="cart-qty-control"
+                 x-data="cartItem({{ item.pk }}, {{ item.quantity }}, {{ item.price_snapshot }}, '{{ csrf_token }}')"
+                 :id="'cart-item-' + itemId">
+              <button type="button" class="cart-qty-btn" @click="updateQty(qty - 1)">−</button>
+              <div class="cart-qty-num" x-text="qty">{{ item.quantity }}</div>
+              <button type="button" class="cart-qty-btn" @click="updateQty(qty + 1)">+</button>
+            </div>
         </div>
 
         <div class="cart-item-price">
-          <div class="cart-item-total">₦{{ item.line_total|floatformat:0|intcomma }}</div>
+          <div class="cart-item-total" id="line-total-{{ item.pk }}">₦{{ item.line_total|floatformat:0|intcomma }}</div>
           <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:6px;">₦{{ item.price_snapshot|floatformat:0|intcomma }} each</div>
           <form method="post" action="/orders/cart/remove/{{ item.pk }}/">
             {% csrf_token %}
@@ -306,11 +305,11 @@
 
   {# Summary #}
   {% if items %}
-  <div class="cart-summary">
+      <div class="cart-summary" style="margin-top:65px;">
     <div class="summary-title">Order summary</div>
     <div class="summary-row">
       <span>Subtotal ({{ cart.total_items }} items)</span>
-      <span style="font-family:'DM Mono',monospace;color:var(--text);">₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--text);" data-cart-subtotal>₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
     </div>
     <div class="summary-row">
       <span>Delivery</span>
@@ -318,7 +317,7 @@
     </div>
     <div class="summary-row total">
       <span>Estimated total</span>
-      <span>₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
+      <span data-cart-subtotal>₦{{ cart.subtotal|floatformat:0|intcomma }}</span>
     </div>
     <a href="/orders/checkout/" class="checkout-btn">
       Checkout
@@ -332,4 +331,46 @@
   {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function showToast(message, type = 'error') {
+    const container = document.getElementById('nexo-toast-container');
+    const toast = document.createElement('div');
+    toast.style.cssText = `display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--surface);border:1.5px solid var(--danger);border-radius:12px;font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--danger);box-shadow:0 4px 20px rgba(0,0,0,0.08);pointer-events:auto;opacity:0;transform:translateY(8px);transition:opacity 0.2s ease,transform 0.2s ease;min-width:220px;max-width:320px;`;
+    toast.innerHTML = `<iconify-icon icon="heroicons:x-circle" style="font-size:20px;flex-shrink:0;"></iconify-icon><span>${message}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }));
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; setTimeout(() => toast.remove(), 200); }, 3000);
+  }
+
+  function cartItem(itemId, initialQty, unitPrice, csrfToken) {
+    return {
+      itemId, qty: initialQty, unitPrice, csrfToken,
+      async updateQty(newQty) {
+        if (newQty < 1) return;
+        try {
+          const fd = new FormData();
+          fd.append('quantity', newQty);
+          fd.append('csrfmiddlewaretoken', this.csrfToken);
+          const r = await fetch('/orders/cart/update/' + this.itemId + '/', { method: 'POST', body: fd });
+          const d = await r.json();
+          if (d.success) {
+            this.qty = newQty;
+            const lineEl = document.getElementById('line-total-' + this.itemId);
+            if (lineEl) lineEl.textContent = '₦' + Math.round(newQty * this.unitPrice).toLocaleString('en-NG');
+            if (d.cart_total !== undefined) {
+              document.querySelectorAll('[data-cart-subtotal]').forEach(el => {
+                el.textContent = '₦' + Math.round(d.cart_total).toLocaleString('en-NG');
+              });
+            }
+          } else {
+            showToast(d.message || 'Could not update quantity');
+          }
+        } catch(e) { showToast('Something went wrong'); }
+      }
+    };
+  }
+</script>
 {% endblock %}

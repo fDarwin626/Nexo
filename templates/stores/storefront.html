@@ -223,6 +223,56 @@
 .store-tab:hover { color: var(--text); }
 .store-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+/* ── STICKY STORE SEARCH ── */
+.store-search-sticky {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: transparent;
+  padding: 12px 24px;
+}
+.store-search-sticky-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.store-search-sticky form {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+}
+.store-search-sticky input {
+  width: 100%;
+  padding: 10px 16px 10px 38px;
+  background: var(--surface-alt);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+}
+.store-search-sticky .search-icon-pos {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 15px;
+}
+.store-search-count {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 /* ── MAIN LAYOUT ── */
 .store-wrap {
   max-width: 1280px;
@@ -614,6 +664,22 @@
   </div>
 </div>
 
+{# ── STICKY STORE SEARCH (overlays hero like main navbar) ── #}
+<div class="store-search-sticky">
+  <div class="store-search-sticky-inner">
+    <form method="get">
+      <iconify-icon icon="heroicons:magnifying-glass" class="search-icon-pos"></iconify-icon>
+      <input
+        type="search"
+        name="q"
+        value="{{ request.GET.q|default:'' }}"
+        placeholder="Search this store..."
+      />
+    </form>
+    <div class="store-search-count">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</div>
+  </div>
+</div>
+
 {# ── TRUST BADGES ── #}
 <div class="trust-badges-row">
   <div class="trust-badges-items">
@@ -718,25 +784,8 @@
 
 {# ── STORE CONTENT ── #}
 <div class="store-wrap">
-
   {# ── PRODUCTS TAB ── #}
   <div x-show="activeTab === 'products'">
-    {# Search + sort bar #}
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;">
-      <form method="get" style="flex:1;max-width:400px;position:relative;">
-        <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:15px;"></iconify-icon>
-        <input
-          type="search"
-          name="q"
-          value="{{ request.GET.q|default:'' }}"
-          placeholder="Search this store..."
-          style="width:100%;padding:10px 16px 10px 38px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;"
-        />
-      </form>
-      <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
-        {{ products.paginator.count }} product{{ products.paginator.count|pluralize }}
-      </div>
-    </div>
 
     <div class="products-grid">
       {% for product in products %}

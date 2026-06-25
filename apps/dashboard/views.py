@@ -291,7 +291,6 @@ def seller_store_settings(request):
     seller = request.user.seller_profile
     from apps.stores.models import StorefrontImage
     from django.utils import timezone as tz
-    from datetime import timedelta
 
     storefront_images = StorefrontImage.objects.filter(is_active=True)
 
@@ -331,12 +330,25 @@ def seller_store_settings(request):
             seller.store_name_last_changed = tz.now()
 
         # ── OTHER SETTINGS ──
+
         seller.store_description = request.POST.get('store_description', '').strip()
         seller.whatsapp_number = request.POST.get('whatsapp_number', '').strip()
         seller.banner_headline = request.POST.get('banner_headline', '').strip()
         seller.banner_subtext = request.POST.get('banner_subtext', '').strip()
         seller.banner_bg_color = request.POST.get('banner_bg_color', '#111118').strip()
         seller.banner_accent_color = request.POST.get('banner_accent_color', '#FF4D00').strip()
+
+        # ── HERO SECTION (skeleton-locked storefront) ──
+        seller.hero_headline = request.POST.get('hero_headline', '').strip()
+        seller.hero_subtext = request.POST.get('hero_subtext', '').strip()
+        seller.hero_cta_text = request.POST.get('hero_cta_text', 'Shop Now').strip()
+        hero_layout = request.POST.get('hero_layout_style', 'split').strip()
+        if hero_layout in [c[0] for c in SellerProfile.HeroLayoutStyle.choices]:
+            seller.hero_layout_style = hero_layout
+        hero_align = request.POST.get('hero_text_align', 'left').strip()
+        if hero_align in [c[0] for c in SellerProfile.HeroAlign.choices]:
+            seller.hero_text_align = hero_align
+
         seller.allow_pod = request.POST.get('allow_pod') == 'on'
         seller.is_on_vacation = request.POST.get('is_on_vacation') == 'on'
         vacation_return = request.POST.get('vacation_return_date', '').strip()

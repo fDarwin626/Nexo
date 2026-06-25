@@ -379,6 +379,17 @@ def product_detail(request, product_slug):
                 })
     variant_groups = dict(variant_groups)
 
+    # Restore cart qty per SKU so page remembers qty on refresh
+    from apps.orders.views import get_or_create_cart
+    cart = get_or_create_cart(request)
+    cart_items = cart.items.filter(sku__product=product).prefetch_related('sku__variant_options')
+    cart_variant_map = {}
+    for ci in cart_items:
+        cart_variant_map[str(ci.sku.pk)] = [
+            {'type_id': str(opt.variant_type.pk), 'option_id': str(opt.pk)}
+            for opt in ci.sku.variant_options.all()
+        ]
+
     return render(request, 'products/detail.html', {
         'product': product,
         'skus': skus,
@@ -389,6 +400,7 @@ def product_detail(request, product_slug):
         'seller': product.seller,
         'variant_groups': variant_groups,
         'variant_type_count': len(variant_groups),
+        'cart_variant_map': json.dumps(cart_variant_map),
     })
 
 
