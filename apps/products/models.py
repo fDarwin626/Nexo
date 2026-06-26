@@ -466,6 +466,7 @@ class ProductImage(models.Model):
     )
     image = models.ImageField(
         upload_to='products/images/',
+        max_length=500,
         help_text='Uploaded to Cloudinary in production'
     )
     alt_text = models.CharField(
@@ -572,6 +573,7 @@ class Review(models.Model):
         upload_to='reviews/photos/',
         null=True,
         blank=True,
+        max_length=500,
         help_text='Optional photo uploaded to Cloudinary'
     )
     # Seller reply — one reply only, never editable

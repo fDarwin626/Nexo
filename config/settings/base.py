@@ -133,12 +133,22 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']   # where we put our static files
 STATIC_ROOT = BASE_DIR / 'staticfiles'     # where collectstatic puts them for prod
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ── MEDIA FILES ──────────────────────────────────────────────
-# Media = user uploaded files (local dev only — prod uses Cloudinary)
-MEDIA_URL = '/media/'
+# Media uploads go to Cloudinary — MEDIA_ROOT only used as temp buffer
+MEDIA_URL = ''
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
 
 # ── DEFAULT PRIMARY KEY ──────────────────────────────────────
 # Use BigAutoField for all models by default
@@ -239,7 +249,7 @@ CLOUDINARY_STORAGE = {
     'API_KEY': env('CLOUDINARY_API_KEY'),
     'API_SECRET': env('CLOUDINARY_API_SECRET'),
 }
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+#DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # ── EMAIL ────────────────────────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

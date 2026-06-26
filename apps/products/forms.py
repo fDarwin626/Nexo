@@ -13,29 +13,15 @@ from unicodedata import category
 from .models import Product, ProductSKU, ProductImage, Category, VariantOption
 
 
-def validate_png_only(image):
-    """
-    Enforces PNG only for primary product images.
-    PNG = transparent background = clean UI display.
-    No white boxes behind product images.
-    """
-    if not image.name.lower().endswith('.png'):
-        raise ValidationError(
-            'Only PNG images are accepted for product images. '
-            'PNG ensures transparent backgrounds for clean display on Nexo.'
-        )
-
-
 def validate_png_or_jpg(image):
     """
-    Gallery images (non-primary) accept PNG or JPG.
-    Only primary/hero images must be PNG.
+    All product images (primary or gallery) accept PNG, JPG, or JPEG.
     """
     allowed = ['.png', '.jpg', '.jpeg']
     ext = '.' + image.name.lower().split('.')[-1]
     if ext not in allowed:
         raise ValidationError(
-            'Only PNG or JPG images are accepted for gallery photos.'
+            'Only PNG or JPG images are accepted.'
         )
 
 
@@ -181,11 +167,7 @@ class ProductImageForm(forms.ModelForm):
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:
-            is_primary = self.data.get('is_primary')
-            if is_primary:
-                validate_png_only(image)
-            else:
-                validate_png_or_jpg(image)
+            validate_png_or_jpg(image)
         return image
 
 

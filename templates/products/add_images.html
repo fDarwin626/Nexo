@@ -1,14 +1,207 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Add Images — {{ product.name }}</h1>
-    <p>First image uploaded will be the primary image (must be PNG).</p>
-    <p>Gallery images can be PNG or JPG.</p>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="images" multiple accept=".png,.jpg,.jpeg">
-        <button type="submit">Upload Images</button>
-    </form>
-    <a href="{% url 'dashboard:seller' %}">Skip for now</a>
-</body>
-</html>
+{% extends "base/base_seller.html" %}
+{% load static %}
+
+{% block title %}Add photos — {{ product.name }}{% endblock %}
+
+{% block seller_extra_head %}
+<style>
+.photos-wrap { max-width: 720px; }
+.photos-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding: 16px 18px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.photos-hero iconify-icon { font-size: 22px; color: var(--accent); flex-shrink: 0; }
+.photos-hero-text { font-family: 'Satoshi', sans-serif; font-size: 13px; color: var(--text); line-height: 1.5; }
+.photos-hero-text strong { font-weight: 700; }
+
+.dropzone {
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 24px;
+}
+.dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone iconify-icon { font-size: 40px; color: var(--text-muted); display: block; margin-bottom: 10px; }
+.dropzone-title { font-family: 'Clash Display', sans-serif; font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.dropzone-sub { font-family: 'Satoshi', sans-serif; font-size: 13px; color: var(--text-muted); }
+.dropzone-sub strong { color: var(--accent); }
+
+.contact-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.sheet-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--surface-alt);
+}
+.sheet-thumb.is-primary { border-color: var(--accent); }
+.sheet-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sheet-primary-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 3px 8px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.sheet-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+.sheet-remove iconify-icon { font-size: 13px; }
+
+.photos-actions { display: flex; align-items: center; gap: 14px; }
+.save-btn {
+  padding: 13px 28px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+.save-btn:hover { opacity: 0.9; }
+.save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.skip-link {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.skip-link:hover { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block seller_content %}
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">Add photos</div>
+    <div class="seller-page-sub">{{ product.name }}</div>
+  </div>
+</div>
+
+<div class="photos-wrap" x-data="photoUploader()">
+
+  <div class="photos-hero">
+    <iconify-icon icon="heroicons:information-circle"></iconify-icon>
+    <div class="photos-hero-text">
+              Your <strong>first photo</strong> becomes the primary image shown on the marketplace and your storefront. PNG, JPG, and JPEG are all accepted.
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div
+      class="dropzone"
+      :class="{ 'drag-over': dragOver }"
+      @click="$refs.fileInput.click()"
+      @dragover.prevent="dragOver = true"
+      @dragleave.prevent="dragOver = false"
+      @drop.prevent="dragOver = false; addFiles($event.dataTransfer.files)"
+    >
+      <iconify-icon icon="heroicons:cloud-arrow-up"></iconify-icon>
+      <div class="dropzone-title">Drop photos here</div>
+      <div class="dropzone-sub">or <strong>click to browse</strong> — first photo must be PNG</div>
+    </div>
+
+    <input
+      type="file"
+      name="images"
+      multiple
+      accept=".png,.jpg,.jpeg"
+      x-ref="fileInput"
+      style="display:none;"
+      @change="addFiles($event.target.files)"
+    >
+
+    <template x-if="files.length">
+      <div class="contact-sheet">
+        <template x-for="(f, i) in files" :key="i">
+          <div class="sheet-thumb" :class="{ 'is-primary': i === 0 }">
+            <span class="sheet-primary-tag" x-show="i === 0">PRIMARY</span>
+            <img :src="f.url" alt="preview">
+            <button type="button" class="sheet-remove" @click.stop="removeFile(i)">
+              <iconify-icon icon="heroicons:x-mark"></iconify-icon>
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <div class="photos-actions">
+      <button type="submit" class="save-btn" :disabled="files.length === 0">
+        <iconify-icon icon="heroicons:check"></iconify-icon>
+        <span x-text="files.length ? 'Upload ' + files.length + ' photo' + (files.length > 1 ? 's' : '') : 'Upload photos'"></span>
+      </button>
+      <a href="{% url 'dashboard:seller' %}" class="skip-link">Skip for now</a>
+    </div>
+  </form>
+
+</div>
+<script>
+function photoUploader() {
+  return {
+    files: [],
+    dragOver: false,
+    addFiles(fileList) {
+      for (const f of fileList) {
+        const ext = f.name.toLowerCase().split('.').pop();
+        if (!['png', 'jpg', 'jpeg'].includes(ext)) {
+          alert('"' + f.name + '" is not a supported image type. Use PNG, JPG, or JPEG.');
+          continue;
+        }
+        this.files.push({ file: f, url: URL.createObjectURL(f) });
+      }
+      this.syncInput();
+    },
+    removeFile(i) {
+      this.files.splice(i, 1);
+      this.syncInput();
+    },
+    syncInput() {
+      const dt = new DataTransfer();
+      this.files.forEach(f => dt.items.add(f.file));
+      this.$refs.fileInput.files = dt.files;
+    }
+  };
+}
+</script>
+{% endblock %}

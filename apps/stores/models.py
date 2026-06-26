@@ -59,6 +59,7 @@ class SellerProfile(models.Model):
         upload_to='stores/logos/',
         blank=True,
         null=True,
+        max_length=500,
         help_text='Store logo — shown on storefront and product cards'
     )
 
@@ -68,6 +69,7 @@ class SellerProfile(models.Model):
         upload_to='stores/banners/',
         blank=True,
         null=True,
+        max_length=500,
         help_text='Campaign banner image shown at top of store page'
     )
     banner_headline = models.CharField(
@@ -523,6 +525,7 @@ class StorefrontImage(models.Model):
     )
     image = models.ImageField(
         upload_to='storefront/templates/',
+        max_length=500,
         help_text='High quality banner/header image'
     )
     category_hint = models.CharField(
@@ -540,3 +543,4 @@ class StorefrontImage(models.Model):
 
     def __str__(self):
         return self.title
+
