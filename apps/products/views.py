@@ -159,28 +159,35 @@ def product_create(request):
     # Get all categories with their required variants for Alpine.js
     categories_with_variants = {}
     for cat in Category.objects.filter(
-        is_active=True
+            is_active=True
     ).prefetch_related('required_variants'):
         categories_with_variants[cat.pk] = {
             'name': cat.name,
+            'parent_id': cat.parent_id,
+            'icon': cat.icon,
             'required_variants': [
-                {
-                    'id': vt.pk,
-                    'name': vt.name,
-                    'options': list(
-                        VariantOption.objects.filter(
-                            variant_type=vt,
-                            is_active=True
-                        ).values('id', 'value')
+            {
+                'id': vt.pk,
+                'name': vt.name,
+                'options': list(
+                    VariantOption.objects.filter(
+                        variant_type=vt,
+                        is_active=True
+                    ).values('id', 'value')
                     )
                 }
                 for vt in cat.required_variants.filter(is_active=True)
             ]
         }
 
+    top_level_categories = Category.objects.filter(
+        is_active=True, parent__isnull=True
+    ).order_by('order', 'name')
+
     return render(request, 'products/create.html', {
         'form': form,
         'categories_with_variants': json.dumps(categories_with_variants),
+        'top_level_categories': top_level_categories,
         'seller': seller,
     })
 

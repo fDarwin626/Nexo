@@ -1,22 +1,38 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Delete Account</h1>
-    <p style="color:red;">
-        <strong>Warning:</strong> This action is permanent and cannot be undone.
-        All your data will be deleted.
-    </p>
-    <form method="post">
-        {% csrf_token %}
-        <label>Enter your password to confirm:</label>
-        <input type="password" name="password" required>
-        <button type="submit" style="background:red; color:white;">
-            Yes, permanently delete my account
+{% extends "base/base.html" %}
+
+{% block title %}Delete account  Nexo{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;padding:60px 24px;text-align:center;">
+
+  <div style="width:64px;height:64px;border-radius:20px;background:#FEE2E2;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+    <iconify-icon icon="heroicons:trash" style="font-size:28px;color:var(--danger);"></iconify-icon>
+  </div>
+
+  <h1 style="font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:10px;">Delete your account</h1>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:28px;">
+    This permanently deletes your account, order history, and all data. This cannot be undone. Enter your password to confirm.
+  </p>
+
+  <form method="post" x-data="{ showPw: false }">
+    {% csrf_token %}
+    <div style="margin-bottom:16px;text-align:left;">
+      <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Confirm your password</label>
+      <div style="position:relative;">
+        <input :type="showPw ? 'text' : 'password'" name="password"
+          style="width:100%;padding:12px 44px 12px 14px;background:var(--surface);border:1.5px solid var(--danger);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box;"
+          placeholder="Your current password" required>
+        <button type="button" @click="showPw = !showPw" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;display:flex;align-items:center;">
+          <iconify-icon :icon="showPw ? 'heroicons:eye-slash' : 'heroicons:eye'"></iconify-icon>
         </button>
-    </form>
-    <a href="/">Cancel</a>
-</body>
-</html>
+      </div>
+    </div>
+    <button type="submit" style="width:100%;padding:13px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s;margin-bottom:12px;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+      <iconify-icon icon="heroicons:trash"></iconify-icon>
+      Permanently delete my account
+    </button>
+    <a href="/auth/profile/" style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;">Cancel — keep my account</a>
+  </form>
 
-
-
+</div>
+{% endblock %}

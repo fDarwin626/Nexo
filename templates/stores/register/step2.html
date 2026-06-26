@@ -1,12 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<body>
-<h1>Become a seller - step {{ step }} of {{ total_steps }}</h1>
-<h2>Store Details</h2>
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Continue</button>
-</form>
-</body>
-</html>
+{% extends "base/base.html" %}
+{% block title %}Become a Seller — Step 2{% endblock %}
+{% block extra_head %}
+<style>
+#navbar,#mobile-tabbar,#mobile-search,footer{display:none!important;}
+.page-content{padding-top:0!important;}
+.reg-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+.reg-left{background:linear-gradient(160deg,#1C0F0A 0%,#2E1A0F 100%);padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:sticky;top:0;height:100vh;}
+.reg-brand{font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700;color:#FAF7F5;letter-spacing:-0.02em;text-decoration:none;}
+.reg-brand span{color:var(--accent);}
+.reg-steps{display:flex;flex-direction:column;gap:12px;}
+.reg-step{display:flex;align-items:center;gap:12px;font-family:'Satoshi',sans-serif;font-size:14px;color:rgba(250,247,245,0.5);}
+.reg-step.done{color:rgba(250,247,245,0.8);}
+.reg-step.current{color:#FAF7F5;font-weight:700;}
+.reg-step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:rgba(255,255,255,0.1);color:rgba(250,247,245,0.5);}
+.reg-step.done .reg-step-dot{background:var(--success);color:#fff;}
+.reg-step.current .reg-step-dot{background:var(--accent);color:#fff;}
+.reg-right{background:var(--bg);display:flex;align-items:center;justify-content:center;padding:48px 56px;overflow-y:auto;}
+.reg-form-wrap{width:100%;max-width:420px;}
+.reg-title{font-family:'Clash Display',sans-serif;font-size:30px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:8px;}
+.reg-sub{font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:28px;line-height:1.5;}
+.field-group{margin-bottom:16px;}
+.field-label{display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.field-input,.field-select{width:100%;padding:12px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s;box-sizing:border-box;}
+.field-input:focus,.field-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(201,80,42,0.1);}
+.field-error{font-family:'Satoshi',sans-serif;font-size:12px;color:var(--danger);margin-top:5px;}
+.reg-submit{width:100%;padding:13px;background:var(--accent);color:#FAF7F5;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.2s;margin-top:6px;}
+.reg-submit:hover{opacity:0.88;}
+@media(max-width:768px){.reg-wrap{grid-template-columns:1fr;}.reg-left{display:none;}.reg-right{padding:32px 24px;}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="reg-wrap">
+  <div class="reg-left">
+    <a href="/" class="reg-brand">NE<span>X</span>O</a>
+    <div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;">Seller onboarding</div>
+      <div class="reg-steps">
+        <div class="reg-step done"><div class="reg-step-dot"><iconify-icon icon="heroicons:check" style="font-size:12px;"></iconify-icon></div>Account details</div>
+        <div class="reg-step current"><div class="reg-step-dot">2</div>Store identity</div>
+        <div class="reg-step"><div class="reg-step-dot">3</div>Bank details</div>
+        <div class="reg-step"><div class="reg-step-dot">4</div>Plan & payment</div>
+      </div>
+    </div>
+    <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:rgba(250,247,245,0.5);line-height:1.6;">Your store name is your brand.<br>Choose carefully.</div>
+  </div>
+  <div class="reg-right">
+    <div class="reg-form-wrap">
+      <div class="reg-title">Your store</div>
+      <p class="reg-sub">This is how buyers will find you. Your store name becomes your unique URL.</p>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field-group">
+          <label class="field-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">{{ field.help_text }}</div>{% endif %}
+          {% if field.errors %}<div class="field-error">{{ field.errors|join:", " }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="reg-submit">Continue →</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

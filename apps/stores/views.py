@@ -483,3 +483,121 @@ def store_detail(request, store_slug):
         'active_coupon': active_coupon,
         'new_arrivals': new_arrivals,
     })
+
+@login_required
+def storefront_builder(request):
+    """
+    Seller storefront builder — Shopify-like editor.
+    Handles all storefront customisation in one view.
+    Two actions:
+    - select_header: seller picks a header image from gallery
+    - POST (main form): saves all other settings
+    """
+    from .models import StorefrontImage
+
+    try:
+        seller = request.user.seller_profile
+    except SellerProfile.DoesNotExist:
+        messages.error(request, 'You need a seller account.')
+        return redirect('/')
+
+    if not seller.is_approved:
+        messages.error(request, 'Your store is pending approval.')
+        return redirect('dashboard:seller')
+
+    storefront_images = StorefrontImage.objects.filter(is_active=True)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        # ── HEADER IMAGE — saved as part of main form ──
+        image_id = request.POST.get('image_id')
+        if image_id:
+            try:
+                img = StorefrontImage.objects.get(pk=image_id, is_active=True)
+                seller.header_image = img
+            except StorefrontImage.DoesNotExist:
+                pass
+
+        # ── MAIN SETTINGS SAVE ──
+        # Store identity
+        if can_change_name(seller):
+            new_name = request.POST.get('store_name', '').strip()
+            if new_name and new_name != seller.store_name:
+                seller.store_name = new_name
+                seller.store_name_last_changed = timezone.now()
+
+        seller.store_description = request.POST.get('store_description', '').strip()
+        seller.whatsapp_number = request.POST.get('whatsapp_number', '').strip()
+        seller.store_tagline = request.POST.get('store_tagline', '').strip()
+
+        # Logo upload
+        if request.FILES.get('logo'):
+            seller.logo = request.FILES['logo']
+
+        # Hero section
+        seller.hero_headline = request.POST.get('hero_headline', '').strip()
+        seller.hero_subtext = request.POST.get('hero_subtext', '').strip()
+        seller.hero_cta_text = request.POST.get('hero_cta_text', 'Shop Now').strip()
+        seller.hero_layout_style = request.POST.get('hero_layout_style', 'split')
+        seller.hero_text_align = request.POST.get('hero_text_align', 'left')
+        seller.hero_text_color = request.POST.get('hero_text_color', '#FAF7F5')
+
+
+        # Trust badges
+        seller.trust_badge_style = request.POST.get('trust_badge_style', 'bar')
+
+        # Sections
+        seller.show_bestsellers = 'show_bestsellers' in request.POST
+        seller.bestsellers_label = request.POST.get('bestsellers_label', 'Bestsellers').strip()
+
+        seller.show_promo_banner = 'show_promo_banner' in request.POST
+        seller.promo_banner_text = request.POST.get('promo_banner_text', '').strip()
+        seller.promo_banner_bg = request.POST.get('promo_banner_bg', '#1C0F0A')
+
+        seller.show_new_arrivals = 'show_new_arrivals' in request.POST
+        seller.new_arrivals_label = request.POST.get('new_arrivals_label', 'New Arrivals').strip()
+
+        seller.show_newsletter = 'show_newsletter' in request.POST
+        seller.newsletter_headline = request.POST.get('newsletter_headline', 'Join our newsletter').strip()
+
+        # Store options
+        seller.allow_pod = 'allow_pod' in request.POST
+        seller.is_on_vacation = 'is_on_vacation' in request.POST
+        vacation_date = request.POST.get('vacation_return_date', '').strip()
+        if vacation_date:
+            from datetime import date
+            try:
+                from datetime import datetime
+                seller.vacation_return_date = datetime.strptime(vacation_date, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        else:
+            seller.vacation_return_date = None
+
+        seller.save()
+        messages.success(request, 'Store updated successfully.')
+        return redirect('stores:storefront_builder')
+
+    # Name change eligibility
+    name_change_ok = can_change_name(seller)
+    days_left = 0
+    if not name_change_ok and seller.store_name_last_changed:
+        from datetime import timedelta
+        unlock_at = seller.store_name_last_changed + timedelta(days=90)
+        days_left = (unlock_at - timezone.now()).days
+
+    return render(request, 'stores/storefront_builder.html', {
+        'seller': seller,
+        'storefront_images': storefront_images,
+        'can_change_name': name_change_ok,
+        'name_change_days_left': days_left,
+    })
+
+
+def can_change_name(seller):
+    """Returns True if seller is allowed to change store name"""
+    if not seller.store_name_last_changed:
+        return True
+    from datetime import timedelta
+    return timezone.now() - seller.store_name_last_changed > timedelta(days=90)

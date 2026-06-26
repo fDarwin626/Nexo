@@ -229,19 +229,24 @@
     }
     .nav-link {
       padding: 8px 14px;
-      border-radius: 8px;
+      border-radius: 0;
       font-family: 'Satoshi', sans-serif;
       font-size: 14px;
       font-weight: 500;
       color: var(--text-muted);
       text-decoration: none;
-      transition: color 0.2s, background 0.2s;
+      transition: color 0.2s, border-color 0.2s;
       white-space: nowrap;
+      border-bottom: 2px solid transparent;
     }
+
     .nav-link:hover {
       color: var(--text);
-      background: var(--surface-alt);
+      background: transparent;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
     }
+
     .nav-link.active {
       color: var(--accent);
       background: var(--accent-soft);
@@ -810,7 +815,7 @@
       <div>
         <a href="/" class="nav-brand" style="display:inline-block; margin-bottom:12px;">NE<span>X</span>O</a>
         <p style="font-size:14px; color:var(--text-muted); line-height:1.6; max-width:260px;">
-          Nigeria's multi-vendor marketplace. Buy from thousands of verified sellers — all in one place.
+          Nigeria's multi-vendor marketplace. Buy from thousands of verified sellers all in one place.
         </p>
       </div>
 

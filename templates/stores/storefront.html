@@ -1,8 +1,9 @@
 {% extends "base/base.html" %}
+{% block nav_class %}full-nav{% endblock %}
 {% load static %}
 {% load humanize %}
 
-{% block title %}{{ store.store_name }} — Nexo{% endblock %}
+{% block title %}{{ store.store_name }}Nexo{% endblock %}
 {% block meta_description %}{{ store.store_description|truncatechars:160 }}{% endblock %}
 
 {% block extra_head %}
@@ -23,7 +24,7 @@
 }
 .main-hero.layout-split {
   position: relative;
-  min-height: 560px;
+  min-height: 680px;
   margin-top: -64px;
   padding-top: 64px;
 }
@@ -35,9 +36,10 @@
   height: 100%;
   min-height: 460px;
   object-fit: cover;
-  object-position: 80% center;
+  object-position: 80% 10%;
   display: block;
 }
+
 .main-hero.layout-split::after {
   display: none;
 }
@@ -62,7 +64,7 @@
   font-family: 'Clash Display', sans-serif;
   font-size: clamp(32px, 4vw, 52px);
   font-weight: 700;
-  color: var(--text);
+  color: {{ store.hero_text_color|default:'#FAF7F5' }};
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin-bottom: 16px;
@@ -70,7 +72,8 @@
 .main-hero-sub {
   font-family: 'Satoshi', sans-serif;
   font-size: 15px;
-  color: var(--text-muted);
+  color: {{ store.hero_text_color|default:'#FAF7F5' }};
+  opacity: 0.85;
   line-height: 1.6;
   max-width: 420px;
   margin-bottom: 28px;
@@ -723,28 +726,16 @@
   <img src="{{ store.header_image.image.url }}" alt="{{ store.store_name }}" class="main-hero-img">
   {% endif %}
 
-  {# ── STORE SEARCH (overlays top of hero, beside logo) ── #}
-  <div class="store-search-sticky">
-    <div class="store-search-sticky-inner">
-      <form method="get">
-        <iconify-icon icon="heroicons:magnifying-glass" class="search-icon-pos"></iconify-icon>
-        <input
-          type="search"
-          name="q"
-          value="{{ request.GET.q|default:'' }}"
-          placeholder="Search this store..."
-        />
-      </form>
-      <div class="store-search-count">{{ products.paginator.count }} product{{ products.paginator.count|pluralize }}</div>
-    </div>
-  </div>
 
-  <div class="main-hero-text">
+<div class="main-hero-text">
+    {% if store.store_tagline %}
+    <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:{{ store.hero_text_color|default:'#FAF7F5' }};opacity:0.75;margin-bottom:8px;">{{ store.store_tagline }}</div>
+    {% endif %}
     {% if store.hero_headline %}
-    <h1 class="main-hero-headline">{{ store.hero_headline }}</h1>
+    <h1 class="main-hero-headline" style="color:{{ store.hero_text_color|default:'#FAF7F5' }};">{{ store.hero_headline }}</h1>
     {% endif %}
     {% if store.hero_subtext %}
-    <p class="main-hero-sub">{{ store.hero_subtext }}</p>
+    <p class="main-hero-sub" style="color:{{ store.hero_text_color|default:'#FAF7F5' }};opacity:0.85;">{{ store.hero_subtext }}</p>
     {% endif %}
     {% if store.hero_cta_text %}
     <a href="#products" class="btn-primary" style="padding:13px 28px;font-size:14px;width:fit-content;">
@@ -776,6 +767,16 @@
   <button class="store-tab" @click="$dispatch('store-tab', 'about')" x-on:store-tab.window="$el.classList.toggle('active', $event.detail === 'about')">
     About Store
   </button>
+  <form method="get" style="margin-left:auto;display:flex;align-items:center;padding:8px 16px;position:relative;">
+    <iconify-icon icon="heroicons:magnifying-glass" style="position:absolute;left:28px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;"></iconify-icon>
+    <input
+      type="search"
+      name="q"
+      value="{{ request.GET.q|default:'' }}"
+      placeholder="Search this store..."
+      style="padding:7px 14px 7px 34px;background:var(--surface-alt);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;width:220px;"
+    />
+  </form>
 </div>
 
 {% if store.show_bestsellers and bestsellers %}
@@ -1031,18 +1032,95 @@
       </div>
   </div>
 </div>
+{% if store.show_newsletter %}
+<div style="background:var(--surface-alt);border-top:1px solid var(--border);padding:48px 24px;text-align:center;">
+  <div style="max-width:480px;margin:0 auto;">
+    <h3 style="font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.01em;margin-bottom:8px;">{{ store.newsletter_headline|default:"Join our newsletter" }}</h3>
+    <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:20px;">Get the latest drops and exclusive offers straight to your inbox.</p>
+    <div style="display:flex;gap:8px;max-width:360px;margin:0 auto;">
+      <input type="email" placeholder="Your email address" style="flex:1;padding:11px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;">
+      <button style="padding:11px 20px;background:var(--accent);color:#FAF7F5;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Subscribe</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 </div>
 
 {% endblock %}
 
+
 {% block extra_scripts %}
-
-
 <script>
-  gsap.from('.store-identity', { opacity: 0, y: 20, duration: 0.5, ease: 'power2.out' });
-  gsap.from('.products-grid .product-card', {
-    opacity: 0, y: 20, duration: 0.4, stagger: 0.06, delay: 0.2, ease: 'power2.out'
-  });
+  // Only run GSAP if not on a reduced motion preference
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!prefersReducedMotion) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero text entrance
+    gsap.from('.main-hero-text > *', {
+      opacity: 0,
+      y: 32,
+      duration: 0.7,
+      stagger: 0.12,
+      ease: 'power3.out',
+      delay: 0.1,
+    });
+
+    // Trust badges
+    gsap.from('.trust-badge-item', {
+      opacity: 0,
+      y: 12,
+      duration: 0.4,
+      stagger: 0.07,
+      ease: 'power2.out',
+      delay: 0.4,
+    });
+
+    // Section titles on scroll
+    gsap.utils.toArray('.section-block-title').forEach(el => {
+      gsap.from(el, {
+        scrollTrigger: { trigger: el, start: 'top 88%' },
+        opacity: 0,
+        y: 16,
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    });
+
+    // Product cards on scroll — batch for performance
+    ScrollTrigger.batch('.product-card', {
+      onEnter: batch => gsap.from(batch, {
+        opacity: 0,
+        y: 24,
+        duration: 0.45,
+        stagger: 0.06,
+        ease: 'power2.out',
+        overwrite: true,
+      }),
+      start: 'top 90%',
+      once: true,
+    });
+
+    // Bestsellers scroll row
+    gsap.from('.bestsellers-scroll .product-card', {
+      scrollTrigger: { trigger: '.bestsellers-scroll', start: 'top 85%' },
+      opacity: 0,
+      x: 30,
+      duration: 0.4,
+      stagger: 0.08,
+      ease: 'power2.out',
+    });
+
+    // Promo banner
+    gsap.from('.promo-banner', {
+      scrollTrigger: { trigger: '.promo-banner', start: 'top 88%' },
+      opacity: 0,
+      scale: 0.97,
+      duration: 0.5,
+      ease: 'power2.out',
+    });
+  }
 </script>
 {% endblock %}

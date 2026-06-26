@@ -13,5 +13,6 @@ urlpatterns = [
     path('register/step4/', views.seller_register_step4, name='seller_register_step4'),
     path('register/payment-callback/', views.seller_payment_callback, name='seller_payment_callback'),
     path('register/complete/', views.onboarding_complete, name='onboarding_complete'),
+    path('builder/', views.storefront_builder, name='storefront_builder'),
     path('<slug:store_slug>/', views.store_detail, name='store_detail'),
 ]

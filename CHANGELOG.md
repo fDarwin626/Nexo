@@ -31,6 +31,8 @@
 - **Seller Dashboard** — full sidebar UI named after store, overview stats, storefront builder
 - **Storefront Builder** — admin header image gallery, live preview, store name 3-month lock, banner editor
 - **StorefrontImage model** — admin uploads header images, sellers pick from gallery
+- **User Settings** — profile update, password change, POD allowance display, become seller CTA, account stats, danger zone
+
 
 ### 📋 Planned
 - **Section 13** — DRF API Layer (Flutter-ready)

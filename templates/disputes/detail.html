@@ -1,68 +1,122 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base.html" %}
+{% load humanize %}
 
-<h1>Dispute — {{ dispute.seller_order.order.order_ref }}</h1>
-<a href="{% url 'disputes:my_disputes' %}">← My Disputes</a>
+{% block title %}Dispute {{ dispute.seller_order.order.order_ref }} — Nexo{% endblock %}
 
-<hr>
+{% block content %}
+<div style="max-width:780px;margin:0 auto;padding:40px 24px;">
 
-<h2>Details</h2>
-<p>Seller: {{ dispute.seller.store_name }}</p>
-<p>Reason: {{ dispute.get_reason_display }}</p>
-<p>Status: {{ dispute.get_status_display }}</p>
-<p>Opened: {{ dispute.created_at|date:"d M Y H:i" }}</p>
-{% if dispute.seller_response_deadline %}
-<p>Seller Response Deadline: {{ dispute.seller_response_deadline|date:"d M Y H:i" }}</p>
-{% endif %}
+  <a href="/disputes/my/" style="display:inline-flex;align-items:center;gap:6px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:28px;">
+    <iconify-icon icon="heroicons:arrow-left"></iconify-icon>
+    All disputes
+  </a>
 
-<h3>Your Description</h3>
-<p>{{ dispute.description }}</p>
-
-<h3>Evidence</h3>
-{% if dispute.evidence_photo_1 %}
-    <p>Photo 1 uploaded</p>
-{% endif %}
-{% if dispute.evidence_photo_2 %}
-    <p>Photo 2 uploaded</p>
-{% endif %}
-{% if dispute.evidence_photo_3 %}
-    <p>Photo 3 uploaded</p>
-{% endif %}
-{% if dispute.evidence_video_url %}
-    <p>Video: <a href="{{ dispute.evidence_video_url }}" target="_blank">View</a></p>
-{% endif %}
-
-<hr>
-
-{% if dispute.seller_response %}
-<h2>Seller Response</h2>
-<p>{{ dispute.seller_response }}</p>
-<p><small>Responded: {{ dispute.seller_responded_at|date:"d M Y H:i" }}</small></p>
-<hr>
-{% endif %}
-
-{% if dispute.admin_decision %}
-<h2>Admin Decision</h2>
-<p>{{ dispute.admin_decision }}</p>
-{% if dispute.compensation_amount %}
-<p>Compensation: ₦{{ dispute.compensation_amount }}</p>
-{% endif %}
-<hr>
-{% endif %}
-
-<h2>Message Thread</h2>
-{% if dispute_messages %}
-    {% for msg in dispute_messages %}
-    <div style="border:1px solid #ccc; padding:8px; margin:5px 0;">
-        <strong>{{ msg.sender_type|upper }}</strong>
-        — {{ msg.created_at|date:"d M Y H:i" }}<br>
-        {{ msg.message }}
+  {# Status banner #}
+  <div style="
+    padding:20px 24px;
+    border-radius:14px;
+    margin-bottom:24px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    {% if dispute.status == 'open' %}background:#FEF3C7;border:1px solid rgba(245,158,11,0.3);
+    {% elif dispute.status == 'escalated' %}background:#FEE2E2;border:1px solid rgba(239,68,68,0.3);
+    {% elif 'resolved' in dispute.status %}background:#DCFCE7;border:1px solid rgba(34,197,94,0.3);
+    {% else %}background:var(--surface-alt);border:1px solid var(--border);{% endif %}">
+    <iconify-icon icon="
+      {% if dispute.status == 'open' %}heroicons:clock
+      {% elif dispute.status == 'escalated' %}heroicons:exclamation-triangle
+      {% elif 'resolved' in dispute.status %}heroicons:check-circle
+      {% else %}heroicons:information-circle{% endif %}"
+      style="font-size:24px;flex-shrink:0;
+      {% if dispute.status == 'open' %}color:#92400E;
+      {% elif dispute.status == 'escalated' %}color:#991B1B;
+      {% elif 'resolved' in dispute.status %}color:#166534;
+      {% else %}color:var(--text-muted);{% endif %}">
+    </iconify-icon>
+    <div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;
+        {% if dispute.status == 'open' %}color:#92400E;
+        {% elif dispute.status == 'escalated' %}color:#991B1B;
+        {% elif 'resolved' in dispute.status %}color:#166534;
+        {% else %}color:var(--text);{% endif %}">
+        {{ dispute.get_status_display }}
+      </div>
+      {% if dispute.admin_decision %}
+      <div style="font-family:'Satoshi',sans-serif;font-size:13px;margin-top:3px;color:var(--text-muted);">{{ dispute.admin_decision }}</div>
+      {% elif dispute.seller_response_deadline and dispute.status == 'open' %}
+      <div style="font-family:'Satoshi',sans-serif;font-size:13px;margin-top:3px;color:var(--text-muted);">Seller must respond by {{ dispute.seller_response_deadline|date:"M d, H:i" }}</div>
+      {% endif %}
     </div>
-    {% endfor %}
-{% else %}
-    <p>No messages yet.</p>
-{% endif %}
+  </div>
 
-</body>
-</html>
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+
+    {# Main thread #}
+    <div>
+      {# Original complaint #}
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Your complaint</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);line-height:1.7;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">{{ dispute.description }}</div>
+        {% if dispute.evidence_photo_1 or dispute.evidence_photo_2 or dispute.evidence_photo_3 %}
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          {% if dispute.evidence_photo_1 %}<img src="{{ dispute.evidence_photo_1.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+          {% if dispute.evidence_photo_2 %}<img src="{{ dispute.evidence_photo_2.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+          {% if dispute.evidence_photo_3 %}<img src="{{ dispute.evidence_photo_3.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# Messages #}
+      {% if dispute_messages %}
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">Thread</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        {% for msg in dispute_messages %}
+        <div style="padding:14px 16px;border-radius:10px;
+          {% if msg.sender_type == 'admin' %}background:var(--surface);border:1px solid var(--border);
+          {% elif msg.sender_type == 'seller' %}background:var(--surface-alt);border:1px solid var(--border);margin-left:20px;
+          {% endif %}">
+          <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;">
+            {% if msg.sender_type == 'admin' %}Nexo Support{% else %}{{ dispute.seller.store_name }}{% endif %}
+            · {{ msg.created_at|date:"M d, H:i" }}
+          </div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);line-height:1.6;">{{ msg.message }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Sidebar #}
+    <div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;">Dispute details</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:3px;">Order</div>
+            <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text);">{{ dispute.seller_order.order.order_ref }}</div>
+          </div>
+          <div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:3px;">Seller</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:600;color:var(--text);">{{ dispute.seller.store_name }}</div>
+          </div>
+          <div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:3px;">Reason</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);">{{ dispute.get_reason_display }}</div>
+          </div>
+          <div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:3px;">Opened</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);">{{ dispute.created_at|date:"M d, Y" }}</div>
+          </div>
+          {% if dispute.compensation_amount %}
+          <div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:3px;">Compensation</div>
+            <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--success);">₦{{ dispute.compensation_amount|floatformat:0|intcomma }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

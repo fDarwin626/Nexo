@@ -1,9 +1,14 @@
-<!DOCTYPE html>
-<html>
-<body style="text-align:center; padding-top:100px;">
-    <h1 style="color:#FF4D00; font-size:72px;">500</h1>
-    <h2>Something went wrong</h2>
-    <p>We're working on it. Try again shortly.</p>
-    <a href="/">← Back to Nexo</a>
-</body>
-</html>
+{% extends "base/base.html" %}
+
+{% block title %}Server error — Nexo{% endblock %}
+
+{% block content %}
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;text-align:center;">
+  <div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:120px;font-weight:700;color:var(--border);line-height:1;letter-spacing:-0.04em;margin-bottom:0;">500</div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:10px;">Something went wrong</div>
+    <p style="font-family:'Satoshi',sans-serif;font-size:15px;color:var(--text-muted);margin-bottom:28px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.6;">Our team has been notified. Please try again in a few minutes.</p>
+    <a href="/" class="btn-primary">Go home</a>
+  </div>
+</div>
+{% endblock %}

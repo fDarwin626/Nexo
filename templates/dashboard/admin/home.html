@@ -1,258 +1,608 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base.html" %}
+{% load humanize %}
 
-<h1>Admin Super Dashboard</h1>
-<a href="{% url 'dashboard:seller' %}" style="display:none"></a>
+{% block title %}Admin Dashboard — Nexo{% endblock %}
 
-<hr>
+{% block extra_head %}
+<style>
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 64px);
+}
+.admin-sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+.admin-nav-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 20px 4px;
+  margin-top: 8px;
+}
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  width: 100%;
+  text-align: left;
+}
+.admin-nav-item:hover { color: var(--text); background: var(--surface-alt); }
+.admin-nav-item.active { color: var(--accent); background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+.admin-nav-item iconify-icon { font-size: 17px; flex-shrink: 0; }
+.admin-main { background: var(--bg); overflow-y: auto; }
+.admin-section { padding: 32px; }
+.admin-section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
 
-<h2>Platform Overview</h2>
-<p>Total GMV: ₦{{ gmv }}</p>
-<p>Active Sellers: {{ active_sellers }}</p>
-{% if reserve_fund %}
-<p>Reserve Fund Balance: ₦{{ reserve_fund.balance }}</p>
-{% else %}
-<p>Reserve Fund: Not initialised yet</p>
-{% endif %}
+/* Stat cards */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.stat-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-family: 'DM Mono', monospace;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text);
+}
+.stat-value.accent { color: var(--accent); }
+.stat-value.success { color: var(--success); }
+.stat-value.warning { color: var(--warning); }
 
-<hr>
+/* Table */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+}
+.admin-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+}
+.admin-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: var(--surface-alt); }
 
-<h2>Exchange Rate</h2>
-{% if current_rate %}
-    <p>Current Rate: $1 = ₦{{ current_rate.usd_to_ngn }}</p>
-    <p>Set by: {{ current_rate.set_by.email }} on {{ current_rate.created_at|date:"d M Y" }}</p>
-{% else %}
-    <p style="color:red;">No exchange rate set.</p>
-{% endif %}
+/* Card container */
+.admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.admin-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-card-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
 
-<form method="post" action="{% url 'dashboard:set_exchange_rate' %}">
-    {% csrf_token %}
-    <input type="number" name="usd_to_ngn" placeholder="eg 1650" step="0.01" required>
-    <button type="submit">Update Rate</button>
-</form>
+/* Badge */
+.badge {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-pending { background: #FEF3C7; color: #92400E; }
+.badge-active { background: #DCFCE7; color: #166534; }
+.badge-danger { background: #FEE2E2; color: #991B1B; }
+.badge-info { background: #DBEAFE; color: #1E40AF; }
+[data-theme="dark"] .badge-pending { background: #451A03; color: #FCD34D; }
+[data-theme="dark"] .badge-active { background: #14532D; color: #86EFAC; }
+[data-theme="dark"] .badge-danger { background: #450A0A; color: #FCA5A5; }
+[data-theme="dark"] .badge-info { background: #1E3A5F; color: #93C5FD; }
 
-<hr>
+/* Quick action button */
+.action-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.action-btn:hover { opacity: 0.8; }
+.action-btn.approve { background: #DCFCE7; color: #166534; }
+.action-btn.reject { background: #FEE2E2; color: #991B1B; }
+.action-btn.suspend { background: #FEF3C7; color: #92400E; }
+.action-btn.ban { background: #FEE2E2; color: #991B1B; }
+.action-btn.view { background: var(--surface-alt); color: var(--text); border: 1px solid var(--border); }
+[data-theme="dark"] .action-btn.approve { background: #14532D; color: #86EFAC; }
+[data-theme="dark"] .action-btn.reject { background: #450A0A; color: #FCA5A5; }
+[data-theme="dark"] .action-btn.suspend { background: #451A03; color: #FCD34D; }
 
-<h2>Pending Seller Approvals ({{ pending_sellers|length }})</h2>
-{% if pending_sellers %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Store Name</th>
-        <th>Owner</th>
-        <th>Account Type</th>
-        <th>Applied</th>
-        <th>Actions</th>
-    </tr>
-    {% for seller in pending_sellers %}
-    <tr>
-        <td>{{ seller.store_name }}</td>
-        <td>{{ seller.user.email }}</td>
-        <td>{{ seller.get_account_type_display }}</td>
-        <td>{{ seller.created_at|date:"d M Y" }}</td>
-        <td>
-            <form method="post" action="{% url 'dashboard:approve_seller' seller_id=seller.pk %}" style="display:inline">
-                {% csrf_token %}
-                <button type="submit">Approve</button>
-            </form>
-            &nbsp;
-            <form method="post" action="{% url 'dashboard:reject_seller' seller_id=seller.pk %}" style="display:inline">
-                {% csrf_token %}
-                <input type="text" name="reason" placeholder="Rejection reason" required>
-                <button type="submit" style="color:red;">Reject</button>
-            </form>
-            &nbsp;
-            <form method="post" action="{% url 'dashboard:suspend_seller' seller_id=seller.pk %}" style="display:inline">
-                {% csrf_token %}
-                <button type="submit" style="color:orange;">Suspend</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No pending applications.</p>
-{% endif %}
+/* Inline form */
+.inline-form { display: inline-flex; gap: 6px; align-items: center; }
+.mini-input {
+  padding: 5px 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  width: 120px;
+}
+.mini-input:focus { border-color: var(--accent); }
 
-<hr>
+@media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .admin-sidebar { display: none; }
+}
+</style>
+{% endblock %}
 
-<h2>Escalated Disputes ({{ escalated_disputes|length }})</h2>
-{% if escalated_disputes %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Order Ref</th>
-        <th>Buyer</th>
-        <th>Seller</th>
-        <th>Reason</th>
-        <th>Opened</th>
-    </tr>
-    {% for dispute in escalated_disputes %}
-    <tr>
-        <td>{{ dispute.seller_order.order.order_ref }}</td>
-        <td>{{ dispute.buyer.email }}</td>
-        <td>{{ dispute.seller.store_name }}</td>
-        <td>{{ dispute.get_reason_display }}</td>
-        <td>{{ dispute.created_at|date:"d M Y" }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No escalated disputes.</p>
-{% endif %}
+{% block content %}
+<div class="admin-layout" x-data="{ activeSection: 'overview' }">
 
-<hr>
+  {# ── SIDEBAR ── #}
+  <aside class="admin-sidebar">
+    <div style="padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div style="font-family:'Clash Display',sans-serif;font-size:15px;font-weight:700;color:var(--text);">Nexo Admin</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-top:2px;">{{ request.user.email }}</div>
+    </div>
 
-<h2>Top Selling Products</h2>
-{% if top_products %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Product</th>
-        <th>Total Sold</th>
-    </tr>
-    {% for product in top_products %}
-    <tr>
-        <td>{{ product.product_name }}</td>
-        <td>{{ product.total_sold }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No sales data yet.</p>
-{% endif %}
+    <div class="admin-nav-label">Overview</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='overview'}" @click="activeSection='overview'">
+      <iconify-icon icon="heroicons:squares-2x2"></iconify-icon> Dashboard
+    </button>
 
-<hr>
+    <div class="admin-nav-label">Sellers</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='approvals'}" @click="activeSection='approvals'">
+      <iconify-icon icon="heroicons:clock"></iconify-icon> Pending approvals
+      {% if pending_sellers %}<span style="margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;">{{ pending_sellers|length }}</span>{% endif %}
+    </button>
+    <button class="admin-nav-item" :class="{active:activeSection==='storefront_images'}" @click="activeSection='storefront_images'">
+      <iconify-icon icon="heroicons:photo"></iconify-icon> Storefront images
+    </button>
 
-<h2>Recent Payments</h2>
-{% if recent_payments %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Reference</th>
-        <th>Type</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Buyer</th>
-        <th>Date</th>
-    </tr>
-    {% for log in recent_payments %}
-    <tr>
-        <td>{{ log.fw_reference }}</td>
-        <td>{{ log.get_payment_type_display }}</td>
-        <td>₦{{ log.amount }}</td>
-        <td>{{ log.get_status_display }}</td>
-        <td>{{ log.buyer.email|default:"Guest" }}</td>
-        <td>{{ log.created_at|date:"d M Y H:i" }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No payment logs yet.</p>
-{% endif %}
+    <div class="admin-nav-label">Disputes</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='disputes'}" @click="activeSection='disputes'">
+      <iconify-icon icon="heroicons:exclamation-triangle"></iconify-icon> Escalated disputes
+      {% if escalated_disputes %}<span style="margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;">{{ escalated_disputes|length }}</span>{% endif %}
+    </button>
 
-<hr>
+    <div class="admin-nav-label">Finance</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='payments'}" @click="activeSection='payments'">
+      <iconify-icon icon="heroicons:credit-card"></iconify-icon> Payment logs
+    </button>
+    <button class="admin-nav-item" :class="{active:activeSection==='coupons'}" @click="activeSection='coupons'">
+      <iconify-icon icon="heroicons:tag"></iconify-icon> Platform coupons
+    </button>
+    <button class="admin-nav-item" :class="{active:activeSection==='exchange'}" @click="activeSection='exchange'">
+      <iconify-icon icon="heroicons:currency-dollar"></iconify-icon> Exchange rate
+    </button>
 
-<h2>Fraud Watch — High Fraud Score Users</h2>
-{% if fraud_users %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Email</th>
-        <th>Fraud Score</th>
-        <th>Ban Status</th>
-        <th>Actions</th>
-    </tr>
-    {% for u in fraud_users %}
-    <tr>
-        <td>{{ u.email }}</td>
-        <td>{{ u.fraud_score }}</td>
-        <td>{{ u.ban_status }}</td>
-        <td>
-            {% if u.ban_status == 'none' %}
-            <form method="post" action="{% url 'dashboard:ban_user' user_id=u.pk %}">
-                {% csrf_token %}
-                <select name="ban_type">
-                    <option value="shadow">Shadow Ban</option>
-                    <option value="hard">Hard Ban</option>
-                    <option value="permanent">Permanent Ban</option>
-                </select>
-                <input type="text" name="reason" placeholder="Reason" required>
-                <button type="submit">Ban</button>
-            </form>
-            {% else %}
-                Already banned ({{ u.ban_status }})
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No flagged users.</p>
-{% endif %}
+    <div class="admin-nav-label">Security</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='fraud'}" @click="activeSection='fraud'">
+      <iconify-icon icon="heroicons:shield-exclamation"></iconify-icon> Fraud watch
+    </button>
+    <button class="admin-nav-item" :class="{active:activeSection==='bans'}" @click="activeSection='bans'">
+      <iconify-icon icon="heroicons:no-symbol"></iconify-icon> Ban records
+    </button>
 
-<hr>
+    <div class="admin-nav-label">Analytics</div>
+    <button class="admin-nav-item" :class="{active:activeSection==='products'}" @click="activeSection='products'">
+      <iconify-icon icon="heroicons:chart-bar"></iconify-icon> Top products
+    </button>
 
-<h2>Recent Ban Records</h2>
-{% if recent_bans %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Account</th>
-        <th>Ban Type</th>
-        <th>Reason</th>
-        <th>Date</th>
-    </tr>
-    {% for ban in recent_bans %}
-    <tr>
-        <td>{{ ban.original_account.email|default:"Deleted" }}</td>
-        <td>{{ ban.ban_type }}</td>
-        <td>{{ ban.ban_reason }}</td>
-        <td>{{ ban.created_at|date:"d M Y" }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No ban records.</p>
-{% endif %}
+    <div style="padding:16px 20px;margin-top:8px;border-top:1px solid var(--border);">
+      <a href="/admin/" target="_blank" style="display:flex;align-items:center;gap:8px;font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);text-decoration:none;">
+        <iconify-icon icon="heroicons:arrow-top-right-on-square" style="font-size:14px;"></iconify-icon>
+        Django admin
+      </a>
+    </div>
+  </aside>
 
-<hr>
+  {# ── MAIN ── #}
+  <main class="admin-main">
 
-<h2>Platform Coupons</h2>
-<form method="post" action="{% url 'dashboard:create_platform_coupon' %}">
-    {% csrf_token %}
-    <input type="number" name="discount_value" placeholder="Discount % (5-50)" min="5" max="50" required>
-    <input type="number" name="max_uses" placeholder="Max uses" value="100">
-    <input type="number" name="budget_cap" placeholder="Budget cap ₦ (optional)">
-    <input type="datetime-local" name="valid_from" required>
-    <input type="datetime-local" name="valid_until" required>
-    <button type="submit">Create Platform Coupon</button>
-</form>
+    {# OVERVIEW #}
+    <div class="admin-section" x-show="activeSection === 'overview'">
+      <div class="admin-section-title">Platform overview</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total GMV</div>
+          <div class="stat-value accent">₦{{ gmv|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active sellers</div>
+          <div class="stat-value">{{ active_sellers }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reserve fund</div>
+          <div class="stat-value success">₦{% if reserve_fund %}{{ reserve_fund.balance|floatformat:0|intcomma }}{% else %}0{% endif %}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pending approvals</div>
+          <div class="stat-value {% if pending_sellers %}warning{% endif %}">{{ pending_sellers|length }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Open disputes</div>
+          <div class="stat-value {% if escalated_disputes %}warning{% endif %}">{{ escalated_disputes|length }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Exchange rate</div>
+          <div class="stat-value" style="font-size:16px;">{% if current_rate %}$1 = ₦{{ current_rate.usd_to_ngn }}{% else %}Not set{% endif %}</div>
+        </div>
+      </div>
 
-<br>
+      {# Quick actions #}
+      {% if pending_sellers %}
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-title">Needs attention — {{ pending_sellers|length }} pending approval{{ pending_sellers|length|pluralize }}</div>
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Store</th><th>Owner</th><th>Type</th><th>Applied</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for seller in pending_sellers|slice:":5" %}
+            <tr>
+              <td style="font-weight:600;">{{ seller.store_name }}</td>
+              <td style="color:var(--text-muted);">{{ seller.user.email }}</td>
+              <td><span class="badge badge-info">{{ seller.get_account_type_display }}</span></td>
+              <td style="color:var(--text-muted);">{{ seller.created_at|date:"M d, Y" }}</td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <form method="post" action="/dashboard/admin/sellers/{{ seller.pk }}/approve/" style="display:contents;">
+                    {% csrf_token %}<button type="submit" class="action-btn approve">Approve</button>
+                  </form>
+                  <form method="post" action="/dashboard/admin/sellers/{{ seller.pk }}/reject/" style="display:contents;" x-data="{reason:''}">
+                    {% csrf_token %}
+                    <input type="text" name="reason" x-model="reason" class="mini-input" placeholder="Rejection reason...">
+                    <button type="submit" class="action-btn reject" :disabled="!reason">Reject</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
 
-{% if platform_coupons %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Code</th>
-        <th>Discount</th>
-        <th>Uses</th>
-        <th>Budget Cap</th>
-        <th>Valid Until</th>
-        <th>Active</th>
-    </tr>
-    {% for coupon in platform_coupons %}
-    <tr>
-        <td>{{ coupon.code }}</td>
-        <td>{{ coupon.discount_value }}%</td>
-        <td>{{ coupon.uses_count }}/{{ coupon.max_uses }}</td>
-        <td>{% if coupon.budget_cap %}₦{{ coupon.budget_cap }}{% else %}—{% endif %}</td>
-        <td>{{ coupon.valid_until|date:"d M Y" }}</td>
-        <td>{% if coupon.is_active %}Yes{% else %}No{% endif %}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No platform coupons yet.</p>
-{% endif %}
+    {# PENDING APPROVALS #}
+    <div class="admin-section" x-show="activeSection === 'approvals'" style="display:none;">
+      <div class="admin-section-title">Seller approvals</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Store</th><th>Owner</th><th>Type</th><th>Applied</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for seller in pending_sellers %}
+            <tr>
+              <td style="font-weight:600;">{{ seller.store_name }}</td>
+              <td style="color:var(--text-muted);">{{ seller.user.email }}</td>
+              <td><span class="badge badge-info">{{ seller.get_account_type_display }}</span></td>
+              <td style="color:var(--text-muted);">{{ seller.created_at|date:"M d, Y" }}</td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <form method="post" action="/dashboard/admin/sellers/{{ seller.pk }}/approve/" style="display:contents;">
+                    {% csrf_token %}<button type="submit" class="action-btn approve">Approve</button>
+                  </form>
+                  <form method="post" action="/dashboard/admin/sellers/{{ seller.pk }}/suspend/" style="display:contents;">
+                    {% csrf_token %}<button type="submit" class="action-btn suspend">Suspend</button>
+                  </form>
+                  <form method="post" action="/dashboard/admin/sellers/{{ seller.pk }}/reject/" style="display:contents;" x-data="{r:''}">
+                    {% csrf_token %}
+                    <input type="text" name="reason" x-model="r" class="mini-input" placeholder="Reason required">
+                    <button type="submit" class="action-btn reject" :disabled="!r">Reject</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No pending applications.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<hr>
-<a href="/admin/">Django Admin Panel</a>
+    {# STOREFRONT IMAGES #}
+    <div class="admin-section" x-show="activeSection === 'storefront_images'" style="display:none;">
+      <div class="admin-section-title">Storefront images</div>
+      <p style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);margin-bottom:20px;">Upload header images that sellers can pick for their storefronts. High quality, landscape orientation works best.</p>
+      <div class="admin-card" style="padding:24px;margin-bottom:24px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;">Upload new image</div>
+        <form method="post" action="/admin/stores/storefrontimage/add/" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+          {% csrf_token %}
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Title</label>
+            <input type="text" name="title" class="mini-input" style="width:180px;" placeholder="eg Fashion Hero">
+          </div>
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Category hint</label>
+            <input type="text" name="category_hint" class="mini-input" style="width:140px;" placeholder="eg Fashion">
+          </div>
+          <a href="/admin/stores/storefrontimage/add/" target="_blank" class="btn-primary" style="padding:9px 18px;font-size:13px;">
+            <iconify-icon icon="heroicons:plus"></iconify-icon>
+            Add via admin
+          </a>
+        </form>
+      </div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">
+        Manage storefront images directly in the <a href="/admin/stores/storefrontimage/" target="_blank" style="color:var(--accent);font-weight:600;">Django admin → Stores → Storefront Images</a>
+      </div>
+    </div>
 
-</body>
-</html>
+    {# DISPUTES #}
+    <div class="admin-section" x-show="activeSection === 'disputes'" style="display:none;">
+      <div class="admin-section-title">Escalated disputes</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Order</th><th>Buyer</th><th>Seller</th><th>Reason</th><th>Status</th><th>Opened</th><th></th></tr></thead>
+          <tbody>
+            {% for dispute in escalated_disputes %}
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:12px;">{{ dispute.seller_order.order.order_ref }}</td>
+              <td style="color:var(--text-muted);">{{ dispute.buyer.email }}</td>
+              <td style="font-weight:600;">{{ dispute.seller.store_name }}</td>
+              <td>{{ dispute.get_reason_display }}</td>
+              <td><span class="badge badge-danger">{{ dispute.get_status_display }}</span></td>
+              <td style="color:var(--text-muted);">{{ dispute.created_at|date:"M d, Y" }}</td>
+              <td><a href="/disputes/admin/{{ dispute.pk }}/" class="action-btn view">Manage</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No escalated disputes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# PAYMENTS #}
+    <div class="admin-section" x-show="activeSection === 'payments'" style="display:none;">
+      <div class="admin-section-title">Recent payment logs</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th>Buyer</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for log in recent_payments %}
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ log.fw_reference }}</td>
+              <td>{{ log.get_payment_type_display }}</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:500;">₦{{ log.amount|floatformat:0|intcomma }}</td>
+              <td><span class="badge {% if log.status == 'success' %}badge-active{% else %}badge-danger{% endif %}">{{ log.get_status_display }}</span></td>
+              <td style="color:var(--text-muted);font-size:12px;">{{ log.buyer.email|default:"Guest" }}</td>
+              <td style="color:var(--text-muted);">{{ log.created_at|date:"M d, H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No payment logs yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# COUPONS #}
+    <div class="admin-section" x-show="activeSection === 'coupons'" style="display:none;">
+      <div class="admin-section-title">Platform coupons</div>
+      <div class="admin-card" style="padding:24px;margin-bottom:20px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;">Create new platform coupon</div>
+        <form method="post" action="/dashboard/admin/coupons/create/" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+          {% csrf_token %}
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Discount %</label>
+            <input type="number" name="discount_value" min="5" max="50" class="mini-input" style="width:100%;" placeholder="eg 20" required>
+          </div>
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Max uses</label>
+            <input type="number" name="max_uses" value="100" class="mini-input" style="width:100%;">
+          </div>
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Budget cap ₦</label>
+            <input type="number" name="budget_cap" class="mini-input" style="width:100%;" placeholder="optional">
+          </div>
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Valid from</label>
+            <input type="datetime-local" name="valid_from" class="mini-input" style="width:100%;" required>
+          </div>
+          <div>
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Valid until</label>
+            <input type="datetime-local" name="valid_until" class="mini-input" style="width:100%;" required>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button type="submit" class="btn-primary" style="padding:9px 18px;font-size:13px;width:100%;">Create</button>
+          </div>
+        </form>
+      </div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Code</th><th>Discount</th><th>Uses</th><th>Budget cap</th><th>Expires</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for coupon in platform_coupons %}
+            <tr>
+              <td style="font-family:'DM Mono',monospace;font-weight:500;color:var(--accent);">{{ coupon.code }}</td>
+              <td style="font-weight:700;">{{ coupon.discount_value|floatformat:0 }}%</td>
+              <td style="color:var(--text-muted);">{{ coupon.uses_count }}/{{ coupon.max_uses }}</td>
+              <td style="color:var(--text-muted);">{% if coupon.budget_cap %}₦{{ coupon.budget_cap|floatformat:0|intcomma }}{% else %}—{% endif %}</td>
+              <td style="color:var(--text-muted);">{{ coupon.valid_until|date:"M d, Y" }}</td>
+              <td><span class="badge {% if coupon.is_active %}badge-active{% else %}badge-danger{% endif %}">{% if coupon.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No platform coupons.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# EXCHANGE RATE #}
+    <div class="admin-section" x-show="activeSection === 'exchange'" style="display:none;">
+      <div class="admin-section-title">Exchange rate</div>
+      <div class="admin-card" style="padding:28px;max-width:480px;">
+        {% if current_rate %}
+        <div style="margin-bottom:20px;padding:16px;background:var(--surface-alt);border-radius:10px;">
+          <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-bottom:4px;">Current rate</div>
+          <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--text);">$1 = ₦{{ current_rate.usd_to_ngn }}</div>
+          <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);margin-top:4px;">Set by {{ current_rate.set_by.email }} on {{ current_rate.created_at|date:"M d, Y" }}</div>
+        </div>
+        {% endif %}
+        <form method="post" action="/dashboard/admin/exchange-rate/">
+          {% csrf_token %}
+          <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">New rate (NGN per $1)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="number" name="usd_to_ngn" step="0.01" placeholder="eg 1650" style="flex:1;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:14px;color:var(--text);outline:none;" required>
+            <button type="submit" class="btn-primary" style="padding:11px 20px;font-size:13px;">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# FRAUD WATCH #}
+    <div class="admin-section" x-show="activeSection === 'fraud'" style="display:none;">
+      <div class="admin-section-title">Fraud watch</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Email</th><th>Fraud score</th><th>Ban status</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for u in fraud_users %}
+            <tr>
+              <td>{{ u.email }}</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:500;color:{% if u.fraud_score >= 8 %}var(--danger){% else %}var(--warning){% endif %};">{{ u.fraud_score }}</td>
+              <td><span class="badge {% if u.ban_status == 'none' %}badge-active{% else %}badge-danger{% endif %}">{{ u.ban_status }}</span></td>
+              <td>
+                {% if u.ban_status == 'none' %}
+                <form method="post" action="/dashboard/admin/users/{{ u.pk }}/ban/" style="display:flex;gap:6px;flex-wrap:wrap;" x-data="{r:''}">
+                  {% csrf_token %}
+                  <select name="ban_type" style="padding:5px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text);outline:none;">
+                    <option value="shadow">Shadow</option>
+                    <option value="hard">Hard</option>
+                    <option value="permanent">Permanent</option>
+                  </select>
+                  <input type="text" name="reason" x-model="r" class="mini-input" placeholder="Ban reason" required>
+                  <button type="submit" class="action-btn ban" :disabled="!r">Ban</button>
+                </form>
+                {% else %}
+                <span style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Already banned</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No flagged users.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# BAN RECORDS #}
+    <div class="admin-section" x-show="activeSection === 'bans'" style="display:none;">
+      <div class="admin-section-title">Ban records</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>Account</th><th>Type</th><th>Reason</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for ban in recent_bans %}
+            <tr>
+              <td>{{ ban.original_account.email|default:"Deleted" }}</td>
+              <td><span class="badge badge-danger">{{ ban.ban_type }}</span></td>
+              <td style="color:var(--text-muted);max-width:280px;">{{ ban.ban_reason|truncatechars:60 }}</td>
+              <td style="color:var(--text-muted);">{{ ban.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No ban records.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# TOP PRODUCTS #}
+    <div class="admin-section" x-show="activeSection === 'products'" style="display:none;">
+      <div class="admin-section-title">Top selling products</div>
+      <div class="admin-card">
+        <table class="admin-table">
+          <thead><tr><th>#</th><th>Product</th><th>Units sold</th></tr></thead>
+          <tbody>
+            {% for product in top_products %}
+            <tr>
+              <td style="color:var(--text-muted);font-family:'DM Mono',monospace;">{{ forloop.counter }}</td>
+              <td style="font-weight:600;">{{ product.product_name }}</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:500;color:var(--accent);">{{ product.total_sold }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center;padding:40px;color:var(--text-muted);">No sales data yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}

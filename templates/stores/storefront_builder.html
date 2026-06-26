@@ -1,0 +1,1419 @@
+{% extends "base/base_seller.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Storefront Builder — {{ seller.store_name }}{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block seller_extra_head %}
+<style>
+/* ── BUILDER SHELL — overrides seller-main padding ── */
+.seller-main { padding: 0 !important; overflow: hidden; }
+
+/* ── TOP BAR ── */
+.builder-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 16px;
+}
+.builder-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.builder-store-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+.builder-store-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.builder-store-url {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.builder-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.builder-save-btn {
+  padding: 8px 20px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+.builder-save-btn:hover { opacity: 0.88; }
+.builder-preview-btn {
+  padding: 8px 16px;
+  background: none;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.builder-preview-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── TWO PANEL LAYOUT ── */
+.builder-body {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100vh - 56px - 64px);
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+.builder-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Section nav — icon rail */
+.builder-section-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.builder-section-nav::-webkit-scrollbar { display: none; }
+.builder-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 14px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.builder-nav-btn iconify-icon { font-size: 18px; }
+.builder-nav-btn:hover { color: var(--text); }
+.builder-nav-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Section panels */
+.builder-section-panels {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.builder-section-panels::-webkit-scrollbar { width: 4px; }
+.builder-section-panels::-webkit-scrollbar-track { background: transparent; }
+.builder-section-panels::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.builder-section-panel { display: none; padding: 20px; }
+.builder-section-panel.active { display: block; }
+
+/* Section title inside panel */
+.panel-section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.panel-section-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.panel-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* Field styles */
+.field-group { margin-bottom: 16px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.field-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.08);
+}
+.field-input:disabled { opacity: 0.4; cursor: not-allowed; }
+.field-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  min-height: 72px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.field-textarea:focus { border-color: var(--accent); }
+.field-hint {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.field-char-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 3px;
+}
+
+/* Alignment picker */
+.align-picker {
+  display: flex;
+  gap: 6px;
+}
+.align-btn {
+  flex: 1;
+  padding: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-muted);
+}
+.align-btn:hover { border-color: var(--accent); color: var(--accent); }
+.align-btn.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.align-btn iconify-icon { font-size: 16px; }
+
+/* Layout style picker */
+.layout-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.layout-option {
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.layout-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+.layout-option-preview {
+  height: 44px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface-alt);
+}
+.layout-option-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.layout-option.selected .layout-option-label { color: var(--accent); }
+
+/* Image gallery */
+.img-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.img-option {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2.5px solid var(--border);
+  cursor: pointer;
+  aspect-ratio: 16/9;
+  transition: border-color 0.15s;
+  background: var(--surface-alt);
+}
+.img-option img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-option.selected { border-color: var(--accent); }
+.img-option-check {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.img-option.selected .img-option-check { display: flex; }
+.img-option-check iconify-icon { font-size: 11px; color: #FAF7F5; }
+.img-option-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+.img-gallery-empty {
+  grid-column: 1 / -1;
+  padding: 28px;
+  text-align: center;
+  background: var(--surface-alt);
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Toggle row */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.toggle-row + .toggle-row { border-top: 1px solid var(--border); }
+.toggle-info {}
+.toggle-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.toggle-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* Section block with toggle */
+.section-toggle-block {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.section-toggle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.section-toggle-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.section-toggle-title iconify-icon { font-size: 16px; color: var(--accent); }
+.section-toggle-body {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: none;
+}
+.section-toggle-body.open { display: block; }
+
+/* Color picker row */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 2px;
+}
+.color-hex {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+.color-hex:focus { border-color: var(--accent); }
+
+/* Logo upload */
+.logo-upload-area {
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  position: relative;
+}
+.logo-upload-area:hover { border-color: var(--accent); }
+.logo-upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.logo-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.logo-preview img {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+/* ── RIGHT PANEL — LIVE PREVIEW ── */
+.builder-preview-panel {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.preview-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.preview-device-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 3px;
+}
+.preview-device-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.preview-device-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.preview-device-btn iconify-icon { font-size: 14px; }
+.preview-label-tag {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.preview-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.preview-frame-wrap {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: var(--surface-alt);
+}
+.preview-frame {
+  background: var(--bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+  width: 100%;
+  max-width: 1100px;
+  transition: max-width 0.3s ease;
+  flex-shrink: 0;
+}
+.preview-frame.mobile { max-width: 390px; }
+
+/* ── PREVIEW CONTENT (mini store render) ── */
+.pv-hero {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+}
+.pv-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 80% 10%;
+}
+.pv-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 60%, transparent 100%);
+}
+.pv-hero-text {
+  position: relative;
+  z-index: 1;
+  padding: 32px 28px;
+  max-width: 60%;
+}
+.pv-tagline {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(250,247,245,0.75);
+  margin-bottom: 6px;
+}
+.pv-headline {
+  font-family: 'Clash Display', sans-serif;
+  font-size: clamp(16px, 2.5vw, 26px);
+  font-weight: 700;
+  color: #FAF7F5;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+.pv-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  color: rgba(250,247,245,0.8);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.pv-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border-radius: 7px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pv-no-image {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.pv-no-image iconify-icon { font-size: 32px; }
+.pv-no-image span {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+}
+
+/* Trust badges preview */
+.pv-trust {
+  background: #1C0F0A;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+}
+.pv-trust.style-cards {
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+}
+.pv-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(250,247,245,0.85);
+}
+.pv-trust.style-cards .pv-trust-item { color: var(--text-muted); }
+.pv-trust-item iconify-icon { font-size: 12px; color: rgba(250,247,245,0.6); }
+.pv-trust.style-cards .pv-trust-item iconify-icon { color: var(--accent); }
+
+/* Sections preview */
+.pv-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.pv-section-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.pv-products-row {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+.pv-product-card {
+  flex-shrink: 0;
+  width: 80px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.pv-product-img {
+  width: 80px;
+  height: 70px;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pv-product-img iconify-icon { font-size: 20px; color: var(--border); }
+.pv-product-info {
+  padding: 5px 6px;
+}
+.pv-product-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pv-product-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--accent);
+}
+.pv-promo {
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  margin: 12px 20px;
+}
+.pv-promo-text {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FAF7F5;
+  letter-spacing: -0.01em;
+}
+.pv-newsletter {
+  padding: 20px;
+  text-align: center;
+  background: var(--surface-alt);
+  border-top: 1px solid var(--border);
+}
+.pv-newsletter-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.pv-newsletter-input {
+  display: flex;
+  gap: 6px;
+  max-width: 240px;
+  margin: 0 auto;
+}
+.pv-newsletter-input input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  color: var(--text);
+  outline: none;
+}
+.pv-newsletter-input button {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Tabs preview */
+.pv-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 20px;
+}
+.pv-tab {
+  padding: 10px 14px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.pv-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.pv-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 16px 20px;
+}
+
+/* ── MESSAGES ── */
+.builder-message {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  animation: slide-up 0.3s ease;
+}
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.builder-message.success { background: var(--success); color: #fff; }
+.builder-message.error { background: var(--danger); color: #fff; }
+
+@media (max-width: 900px) {
+  .builder-body { grid-template-columns: 1fr; }
+  .builder-preview-panel { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block seller_content %}
+
+{# ── SUCCESS / ERROR MESSAGES ── #}
+{% for message in messages %}
+<div class="builder-message {{ message.tags }}" id="builder-msg">
+  <iconify-icon icon="{% if message.tags == 'success' %}heroicons:check-circle{% else %}heroicons:exclamation-circle{% endif %}"></iconify-icon>
+  {{ message }}
+</div>
+<script>
+  setTimeout(() => {
+    const msg = document.getElementById('builder-msg');
+    if (msg) msg.remove();
+  }, 3500);
+</script>
+{% endfor %}
+
+{# ── TOP BAR ── #}
+<div class="builder-topbar">
+  <div class="builder-topbar-left">
+    <div class="builder-store-dot"></div>
+    <div>
+      <div class="builder-store-label">{{ seller.store_name }}</div>
+      <div class="builder-store-url">nexo.com/store/{{ seller.store_slug }}/</div>
+    </div>
+  </div>
+  <div class="builder-topbar-right">
+    <a href="/store/{{ seller.store_slug }}/" target="_blank" class="builder-preview-btn">
+      <iconify-icon icon="heroicons:arrow-top-right-on-square"></iconify-icon>
+      View live
+    </a>
+    <button type="submit" form="builder-form" class="builder-save-btn">
+      <iconify-icon icon="heroicons:check"></iconify-icon>
+      Save changes
+    </button>
+  </div>
+</div>
+
+{# ── TWO PANEL BODY ── #}
+<div class="builder-body" x-data="{
+  activeSection: 'image',
+  mobilePreview: false,
+  headline: '{{ seller.hero_headline|escapejs }}',
+  subtext: '{{ seller.hero_subtext|escapejs }}',
+  cta: '{{ seller.hero_cta_text|default:'Shop Now'|escapejs }}',
+  tagline: '{{ seller.store_tagline|escapejs }}',
+  selectedImg: '{% if seller.header_image %}{{ seller.header_image.image.url|escapejs }}{% endif %}',
+  layout: '{% if seller.hero_layout_style %}{{ seller.hero_layout_style }}{% else %}split{% endif %}',
+  align: '{% if seller.hero_text_align %}{{ seller.hero_text_align }}{% else %}left{% endif %}',
+  trustStyle: '{% if seller.trust_badge_style %}{{ seller.trust_badge_style }}{% else %}bar{% endif %}',
+  showBest: {% if seller.show_bestsellers %}true{% else %}false{% endif %},
+  bestLabel: '{% if seller.bestsellers_label %}{{ seller.bestsellers_label|escapejs }}{% else %}Bestsellers{% endif %}',
+  showPromo: {% if seller.show_promo_banner %}true{% else %}false{% endif %},
+  promoText: '{{ seller.promo_banner_text|escapejs }}',
+  promoBg: '{% if seller.promo_banner_bg %}{{ seller.promo_banner_bg }}{% else %}#1C0F0A{% endif %}',
+  showArrivals: {% if seller.show_new_arrivals %}true{% else %}false{% endif %},
+  arrivalsLabel: '{% if seller.new_arrivals_label %}{{ seller.new_arrivals_label|escapejs }}{% else %}New Arrivals{% endif %}',
+  showNewsletter: {% if seller.show_newsletter %}true{% else %}false{% endif %},
+  newsletterTitle: '{% if seller.newsletter_headline %}{{ seller.newsletter_headline|escapejs }}{% else %}Join our newsletter{% endif %}',
+  textColor: '{% if seller.hero_text_color %}{{ seller.hero_text_color }}{% else %}#FAF7F5{% endif %}'
+}">
+  {# ── LEFT: CONTROL PANEL ── #}
+  <div class="builder-panel">
+
+    {# Section nav #}
+    <div class="builder-section-nav">
+      <button class="builder-nav-btn" :class="{ active: activeSection === 'image' }" @click="activeSection = 'image'">
+        <iconify-icon icon="heroicons:photo"></iconify-icon>
+        Image
+      </button>
+      <button class="builder-nav-btn" :class="{ active: activeSection === 'hero' }" @click="activeSection = 'hero'">
+        <iconify-icon icon="heroicons:bold"></iconify-icon>
+        Hero
+      </button>
+      <button class="builder-nav-btn" :class="{ active: activeSection === 'identity' }" @click="activeSection = 'identity'">
+        <iconify-icon icon="heroicons:building-storefront"></iconify-icon>
+        Store
+      </button>
+      <button class="builder-nav-btn" :class="{ active: activeSection === 'sections' }" @click="activeSection = 'sections'">
+        <iconify-icon icon="heroicons:squares-2x2"></iconify-icon>
+        Sections
+      </button>
+      <button class="builder-nav-btn" :class="{ active: activeSection === 'options' }" @click="activeSection = 'options'">
+        <iconify-icon icon="heroicons:cog-6-tooth"></iconify-icon>
+        Options
+      </button>
+    </div>
+
+    {# ── MAIN FORM wraps the panels ── #}
+    <form method="post" enctype="multipart/form-data" id="builder-form" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      {% csrf_token %}
+
+      <div class="builder-section-panels">
+
+        {# ── IMAGE PANEL ── #}
+        <div class="builder-section-panel" :class="{ active: activeSection === 'image' }">
+          <div class="panel-section-title">Hero image</div>
+          <div class="panel-section-sub">Choose a header image for your store from the gallery below. This is the first thing buyers see.</div>
+
+          {% if storefront_images %}
+          <div class="img-gallery">
+            {% for img in storefront_images %}
+            <div
+              class="img-option {% if seller.header_image.pk == img.pk %}selected{% endif %}"
+              @click="
+                selectedImg = '{{ img.image.url|escapejs }}';
+                $el.closest('.img-gallery').querySelectorAll('.img-option').forEach(o => o.classList.remove('selected'));
+                $el.classList.add('selected');
+                document.getElementById('selected-img-id').value = '{{ img.pk }}';
+              "
+            >
+              <img src="{{ img.image.url }}" alt="{{ img.title }}">
+              <div class="img-option-check"><iconify-icon icon="heroicons:check"></iconify-icon></div>
+              <div class="img-option-label">{{ img.title }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="image_id" id="selected-img-id" value="{% if seller.header_image %}{{ seller.header_image.pk }}{% endif %}">
+          {% else %}
+          <div class="img-gallery">
+            <div class="img-gallery-empty">
+              <iconify-icon icon="heroicons:photo" style="font-size:28px;display:block;margin-bottom:6px;"></iconify-icon>
+              No images yet — admin will add templates soon.
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {# ── HERO PANEL ── #}
+        <div class="builder-section-panel" :class="{ active: activeSection === 'hero' }">
+          <div class="panel-section-title">Hero section</div>
+          <div class="panel-section-sub">This is the big statement at the top of your store. Make it count.</div>
+
+          <div class="field-group">
+            <label class="field-label">Tagline <span style="opacity:0.5;">(above headline)</span></label>
+            <input type="text" name="store_tagline" class="field-input" maxlength="40"
+              x-model="tagline"
+              placeholder="eg NEW SEASON · TRENDING NOW">
+            <div class="field-char-count" x-text="tagline.length + '/40'"></div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Headline</label>
+            <input type="text" name="hero_headline" class="field-input" maxlength="80"
+              x-model="headline"
+              placeholder="eg NEW SEASON NEW STYLE">
+            <div class="field-char-count" x-text="headline.length + '/80'"></div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Subtext</label>
+            <textarea name="hero_subtext" class="field-textarea" maxlength="160"
+              x-model="subtext"
+              placeholder="eg Modern outfits for every mood. Shop from the latest collection."></textarea>
+            <div class="field-char-count" x-text="subtext.length + '/160'"></div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Button text</label>
+            <input type="text" name="hero_cta_text" class="field-input" maxlength="30"
+              x-model="cta"
+              placeholder="eg Shop Now">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Text color</label>
+            <div class="color-row">
+              <input type="color" name="hero_text_color" class="color-swatch"
+                x-model="textColor">
+              <input type="text" class="color-hex" :value="textColor"
+                @input="textColor = $event.target.value" maxlength="7">
+            </div>
+            <p class="field-hint">Color of headline and subtext on hero.</p>
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="field-group">
+            <label class="field-label">Layout</label>
+            <div class="layout-picker">
+              <div class="layout-option" :class="{ selected: layout === 'split' }" @click="layout = 'split'">
+                <div class="layout-option-preview" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:4px;">
+                  <div style="background:var(--surface-alt);border-radius:3px;display:flex;align-items:center;padding:4px;">
+                    <div style="width:100%;">
+                      <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:3px;width:70%;"></div>
+                      <div style="height:3px;background:var(--border);border-radius:2px;width:50%;"></div>
+                    </div>
+                  </div>
+                  <div style="background:var(--border);border-radius:3px;"></div>
+                </div>
+                <div class="layout-option-label">Split</div>
+              </div>
+              <div class="layout-option" :class="{ selected: layout === 'overlay' }" @click="layout = 'overlay'">
+                <div class="layout-option-preview" style="background:var(--border);border-radius:4px;padding:4px;display:flex;align-items:flex-end;">
+                  <div style="width:100%;">
+                    <div style="height:4px;background:rgba(255,255,255,0.5);border-radius:2px;margin-bottom:3px;width:70%;"></div>
+                    <div style="height:3px;background:rgba(255,255,255,0.3);border-radius:2px;width:50%;"></div>
+                  </div>
+                </div>
+                <div class="layout-option-label">Overlay</div>
+              </div>
+            </div>
+            <input type="hidden" name="hero_layout_style" :value="layout">
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Text alignment</label>
+            <div class="align-picker">
+              <button type="button" class="align-btn" :class="{ selected: align === 'left' }" @click="align = 'left'" title="Left">
+                <iconify-icon icon="heroicons:bars-3-bottom-left"></iconify-icon>
+              </button>
+              <button type="button" class="align-btn" :class="{ selected: align === 'center' }" @click="align = 'center'" title="Center">
+                <iconify-icon icon="heroicons:bars-3"></iconify-icon>
+              </button>
+              <button type="button" class="align-btn" :class="{ selected: align === 'right' }" @click="align = 'right'" title="Right">
+                <iconify-icon icon="heroicons:bars-3-bottom-right"></iconify-icon>
+              </button>
+            </div>
+            <input type="hidden" name="hero_text_align" :value="align">
+          </div>
+        </div>
+
+        {# ── STORE IDENTITY PANEL ── #}
+        <div class="builder-section-panel" :class="{ active: activeSection === 'identity' }">
+          <div class="panel-section-title">Store identity</div>
+          <div class="panel-section-sub">Your public-facing store name, description and logo.</div>
+
+          <div class="field-group">
+            <label class="field-label">Store name</label>
+            {% if can_change_name %}
+            <input type="text" name="store_name" class="field-input"
+              value="{{ seller.store_name }}" maxlength="100">
+            <p class="field-hint">Can be changed once every 3 months.</p>
+            {% else %}
+            <input type="text" class="field-input" value="{{ seller.store_name }}" disabled>
+            <p class="field-hint" style="color:var(--warning);">
+              <iconify-icon icon="heroicons:lock-closed" style="font-size:11px;"></iconify-icon>
+              Locked for {{ name_change_days_left }} more days.
+            </p>
+            {% endif %}
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Store description</label>
+            <textarea name="store_description" class="field-textarea" maxlength="500"
+              placeholder="Tell buyers what you sell and why they should choose you...">{{ seller.store_description }}</textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">WhatsApp number</label>
+            <input type="text" name="whatsapp_number" class="field-input"
+              value="{{ seller.whatsapp_number }}" placeholder="2348012345678">
+            <p class="field-hint">Include country code. Buyers can message you directly.</p>
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="field-group">
+            <label class="field-label">Store logo</label>
+            <div class="logo-upload-area">
+              <input type="file" name="logo" accept=".png,.jpg,.jpeg">
+              {% if seller.logo %}
+              <div class="logo-preview">
+                <img src="{{ seller.logo.url }}" alt="Current logo">
+                <div>
+                  <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:600;color:var(--text);">Current logo</div>
+                  <div style="font-family:'Satoshi',sans-serif;font-size:11px;color:var(--text-muted);">Click to replace</div>
+                </div>
+              </div>
+              {% else %}
+              <iconify-icon icon="heroicons:arrow-up-tray" style="font-size:22px;color:var(--text-muted);display:block;margin-bottom:6px;"></iconify-icon>
+              <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">Click to upload logo</div>
+              {% endif %}
+            </div>
+            <p class="field-hint">PNG or JPG. Shown on your storefront and product cards.</p>
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="field-group">
+            <label class="field-label">Trust badge style</label>
+            <div class="layout-picker">
+              <div class="layout-option" :class="{ selected: trustStyle === 'bar' }" @click="trustStyle = 'bar'">
+                <div class="layout-option-preview" style="background:#1C0F0A;border-radius:4px;display:flex;align-items:center;justify-content:space-around;padding:6px;">
+                  <div style="text-align:center;">
+                    <div style="width:10px;height:10px;background:rgba(255,255,255,0.4);border-radius:50%;margin:0 auto 3px;"></div>
+                    <div style="width:20px;height:2px;background:rgba(255,255,255,0.3);border-radius:1px;margin:0 auto;"></div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="width:10px;height:10px;background:rgba(255,255,255,0.4);border-radius:50%;margin:0 auto 3px;"></div>
+                    <div style="width:20px;height:2px;background:rgba(255,255,255,0.3);border-radius:1px;margin:0 auto;"></div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="width:10px;height:10px;background:rgba(255,255,255,0.4);border-radius:50%;margin:0 auto 3px;"></div>
+                    <div style="width:20px;height:2px;background:rgba(255,255,255,0.3);border-radius:1px;margin:0 auto;"></div>
+                  </div>
+                </div>
+                <div class="layout-option-label">Dark bar</div>
+              </div>
+              <div class="layout-option" :class="{ selected: trustStyle === 'cards' }" @click="trustStyle = 'cards'">
+                <div class="layout-option-preview" style="background:var(--surface-alt);border-radius:4px;display:flex;align-items:center;justify-content:space-around;padding:6px;">
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <div style="width:8px;height:8px;background:var(--accent);border-radius:50%;"></div>
+                    <div style="width:16px;height:2px;background:var(--border);border-radius:1px;"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <div style="width:8px;height:8px;background:var(--accent);border-radius:50%;"></div>
+                    <div style="width:16px;height:2px;background:var(--border);border-radius:1px;"></div>
+                  </div>
+                </div>
+                <div class="layout-option-label">Icon bar</div>
+              </div>
+            </div>
+            <input type="hidden" name="trust_badge_style" :value="trustStyle">
+          </div>
+        </div>
+
+        {# ── SECTIONS PANEL ── #}
+        <div class="builder-section-panel" :class="{ active: activeSection === 'sections' }">
+          <div class="panel-section-title">Page sections</div>
+          <div class="panel-section-sub">Turn sections on or off and customise their content. Sections show between the hero and the main product grid.</div>
+
+          {# Bestsellers #}
+          <div class="section-toggle-block">
+            <div class="section-toggle-header" @click="$el.nextElementSibling.classList.toggle('open')">
+              <div class="section-toggle-title">
+                <iconify-icon icon="heroicons:star"></iconify-icon>
+                Bestsellers
+              </div>
+              <label class="toggle-switch" @click.stop>
+                <input type="checkbox" name="show_bestsellers" x-model="showBest">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="section-toggle-body">
+              <div class="field-group">
+                <label class="field-label">Section label</label>
+                <input type="text" name="bestsellers_label" class="field-input"
+                  x-model="bestLabel" placeholder="Bestsellers" maxlength="40">
+              </div>
+            </div>
+          </div>
+
+          {# Promo banner #}
+          <div class="section-toggle-block">
+            <div class="section-toggle-header" @click="$el.nextElementSibling.classList.toggle('open')">
+              <div class="section-toggle-title">
+                <iconify-icon icon="heroicons:megaphone"></iconify-icon>
+                Promo banner
+              </div>
+              <label class="toggle-switch" @click.stop>
+                <input type="checkbox" name="show_promo_banner" x-model="showPromo">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="section-toggle-body">
+              <div class="field-group">
+                <label class="field-label">Banner text</label>
+                <input type="text" name="promo_banner_text" class="field-input"
+                  x-model="promoText"
+                  placeholder="eg UP TO 40% OFF ON SELECTED ITEMS" maxlength="80">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Background color</label>
+                <div class="color-row">
+                  <input type="color" name="promo_banner_bg" class="color-swatch"
+                    x-model="promoBg">
+                  <input type="text" class="color-hex" :value="promoBg" @input="promoBg = $event.target.value" maxlength="7">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {# New arrivals #}
+          <div class="section-toggle-block">
+            <div class="section-toggle-header" @click="$el.nextElementSibling.classList.toggle('open')">
+              <div class="section-toggle-title">
+                <iconify-icon icon="heroicons:sparkles"></iconify-icon>
+                New arrivals
+              </div>
+              <label class="toggle-switch" @click.stop>
+                <input type="checkbox" name="show_new_arrivals" x-model="showArrivals">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="section-toggle-body">
+              <div class="field-group">
+                <label class="field-label">Section label</label>
+                <input type="text" name="new_arrivals_label" class="field-input"
+                  x-model="arrivalsLabel" placeholder="New Arrivals" maxlength="40">
+              </div>
+            </div>
+          </div>
+
+          {# Newsletter #}
+          <div class="section-toggle-block">
+            <div class="section-toggle-header" @click="$el.nextElementSibling.classList.toggle('open')">
+              <div class="section-toggle-title">
+                <iconify-icon icon="heroicons:envelope"></iconify-icon>
+                Newsletter strip
+              </div>
+              <label class="toggle-switch" @click.stop>
+                <input type="checkbox" name="show_newsletter" x-model="showNewsletter">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="section-toggle-body">
+              <div class="field-group">
+                <label class="field-label">Headline</label>
+                <input type="text" name="newsletter_headline" class="field-input"
+                  x-model="newsletterTitle"
+                  placeholder="eg Join our newsletter" maxlength="80">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# ── OPTIONS PANEL ── #}
+        <div class="builder-section-panel" :class="{ active: activeSection === 'options' }">
+          <div class="panel-section-title">Store options</div>
+          <div class="panel-section-sub">Control how your store operates for buyers.</div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Pay on Delivery</div>
+              <div class="toggle-sub">Buyers can pay when their order arrives</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="allow_pod" {% if seller.allow_pod %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Vacation mode</div>
+              <div class="toggle-sub">Store visible but cart is disabled</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" name="is_on_vacation" id="vacation-toggle" {% if seller.is_on_vacation %}checked{% endif %}
+                @change="$el.checked ? document.getElementById('vacation-date-row').style.display='block' : document.getElementById('vacation-date-row').style.display='none'">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div id="vacation-date-row" style="padding:12px 0;{% if not seller.is_on_vacation %}display:none;{% endif %}">
+            <div class="field-group">
+              <label class="field-label">Return date <span style="opacity:0.5;">(optional)</span></label>
+              <input type="date" name="vacation_return_date" class="field-input"
+                value="{{ seller.vacation_return_date|default:'' }}">
+              <p class="field-hint">Shown to buyers on your storefront.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  {# ── RIGHT: LIVE PREVIEW ── #}
+  <div class="builder-preview-panel">
+    <div class="preview-topbar">
+      <div class="preview-label-tag">
+        <div class="preview-live-dot"></div>
+        Live preview
+      </div>
+      <div class="preview-device-toggle">
+        <button type="button" class="preview-device-btn" :class="{ active: !mobilePreview }" @click="mobilePreview = false">
+          <iconify-icon icon="heroicons:computer-desktop"></iconify-icon>
+          Desktop
+        </button>
+        <button type="button" class="preview-device-btn" :class="{ active: mobilePreview }" @click="mobilePreview = true">
+          <iconify-icon icon="heroicons:device-phone-mobile"></iconify-icon>
+          Mobile
+        </button>
+      </div>
+    </div>
+
+    <div class="preview-frame-wrap">
+      <div class="preview-frame" :class="{ mobile: mobilePreview }">
+
+      {# Hero preview — reacts to layout, alignment, text color #}
+        <div class="pv-hero"
+          :style="layout === 'overlay' ? 'min-height:280px;' : ''"
+          :class="'align-' + align">
+          <template x-if="selectedImg">
+            <img :src="selectedImg" class="pv-hero-img" alt="Store preview">
+          </template>
+          <template x-if="!selectedImg">
+            <div class="pv-no-image">
+              <iconify-icon icon="heroicons:photo"></iconify-icon>
+              <span>Pick an image from the Image tab</span>
+            </div>
+          </template>
+          <div class="pv-hero-overlay" x-show="selectedImg && layout === 'overlay'"
+            style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.55),rgba(0,0,0,0.05));"></div>
+          <div class="pv-hero-gradient" x-show="selectedImg && layout === 'split'"
+            style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0.38) 0%,rgba(0,0,0,0.08) 55%,transparent 80%);"></div>
+          <div class="pv-hero-text"
+            :style="{
+              textAlign: align === 'right' ? 'right' : align === 'center' ? 'center' : 'left',
+              alignItems: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+              marginLeft: align === 'right' ? 'auto' : align === 'center' ? 'auto' : '0',
+              marginRight: align === 'center' ? 'auto' : '0',
+            }"
+            x-show="headline || subtext || cta">
+            <div class="pv-tagline" :style="'color:' + textColor + ';opacity:0.75;'" x-text="tagline" x-show="tagline"></div>
+            <div class="pv-headline" :style="'color:' + textColor" x-text="headline || 'Your headline here'"></div>
+            <div class="pv-sub" :style="'color:' + textColor + ';opacity:0.8;'" x-text="subtext" x-show="subtext"></div>
+            <a href="#" class="pv-cta" x-text="cta || 'Shop Now'" x-show="cta" @click.prevent></a>
+          </div>
+        </div>
+
+        {# Trust badges preview #}
+        <div class="pv-trust" :class="'style-' + trustStyle">
+          <div class="pv-trust-item"><iconify-icon icon="heroicons:shield-check"></iconify-icon> Premium Quality</div>
+          <div class="pv-trust-item"><iconify-icon icon="heroicons:truck"></iconify-icon> Free Delivery</div>
+          <div class="pv-trust-item"><iconify-icon icon="heroicons:arrow-uturn-left"></iconify-icon> Easy Returns</div>
+          <div class="pv-trust-item"><iconify-icon icon="heroicons:chat-bubble-left-ellipsis"></iconify-icon> 24/7 Support</div>
+        </div>
+
+        {# Tabs preview #}
+        <div class="pv-tabs">
+          <div class="pv-tab active">Products</div>
+          <div class="pv-tab">About Store</div>
+        </div>
+
+        {# Bestsellers preview #}
+        <div class="pv-section" x-show="showBest">
+          <div class="pv-section-title" x-text="bestLabel || 'Bestsellers'"></div>
+          <div class="pv-products-row">
+            {% for i in "12345" %}
+            <div class="pv-product-card">
+              <div class="pv-product-img"><iconify-icon icon="heroicons:photo"></iconify-icon></div>
+              <div class="pv-product-info">
+                <div class="pv-product-name">Product {{ forloop.counter }}</div>
+                <div class="pv-product-price">₦12,000</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Promo banner preview #}
+        <div x-show="showPromo && promoText">
+          <div class="pv-promo" :style="'background:' + promoBg">
+            <div class="pv-promo-text" x-text="promoText"></div>
+          </div>
+        </div>
+
+        {# New arrivals preview #}
+        <div class="pv-section" x-show="showArrivals">
+          <div class="pv-section-title" x-text="arrivalsLabel || 'New Arrivals'"></div>
+          <div class="pv-products-grid">
+            {% for i in "1234" %}
+            <div class="pv-product-card">
+              <div class="pv-product-img"><iconify-icon icon="heroicons:photo"></iconify-icon></div>
+              <div class="pv-product-info">
+                <div class="pv-product-name">Item {{ forloop.counter }}</div>
+                <div class="pv-product-price">₦8,500</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Newsletter preview #}
+        <div class="pv-newsletter" x-show="showNewsletter">
+          <div class="pv-newsletter-title" x-text="newsletterTitle || 'Join our newsletter'"></div>
+          <div class="pv-newsletter-input">
+            <input type="text" placeholder="Your email address" disabled>
+            <button disabled>Subscribe</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

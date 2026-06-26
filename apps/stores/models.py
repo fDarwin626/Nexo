@@ -136,6 +136,23 @@ class SellerProfile(models.Model):
     new_arrivals_label = models.CharField(max_length=40, blank=True, default='New Arrivals')
 
     show_newsletter = models.BooleanField(default=False)
+    hero_text_color = models.CharField(
+        max_length=7,
+        default='#FAF7F5',
+        help_text='Color of headline and subtext on the hero section'
+    )
+    newsletter_headline = models.CharField(
+        max_length=80,
+        blank=True,
+        default='Join our newsletter',
+        help_text='Headline text on the newsletter signup strip'
+    )
+    store_tagline = models.CharField(
+        max_length=40,
+        blank=True,
+        default='NEW ARRIVALS',
+        help_text='Small label above hero headline eg NEW SEASON or TRENDING NOW'
+    )
 
     class TrustBadgeStyle(models.TextChoices):
         BAR = 'bar', 'Bar single dark strip with icons'

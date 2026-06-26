@@ -1,9 +1,45 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Application Submitted!</h1>
-    <p>Your store is pending admin approval.</p>
-    <p>You will receive an email once your store is approved.</p>
-    <a href="{% url 'accounts:login' %}">Login to your account</a>
-</body>
-</html>
+{% extends "base/base.html" %}
+
+{% block title %}Application submitted — Nexo{% endblock %}
+
+{% block extra_head %}
+<style>
+#navbar,#mobile-tabbar,#mobile-search,footer{display:none!important;}
+.page-content{padding-top:0!important;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;text-align:center;">
+  <div style="max-width:480px;">
+    <div style="width:72px;height:72px;border-radius:24px;background:#DCFCE7;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+      <iconify-icon icon="heroicons:check-circle" style="font-size:36px;color:#166534;"></iconify-icon>
+    </div>
+    <div style="font-family:'Clash Display',sans-serif;font-size:32px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:10px;">Application submitted!</div>
+    <p style="font-family:'Satoshi',sans-serif;font-size:15px;color:var(--text-muted);line-height:1.7;margin-bottom:28px;">
+      Your store is now pending admin review. We'll email you within 24–48 hours once approved. While you wait, you can explore the marketplace.
+    </p>
+    <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px;text-align:left;">
+      <div style="font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">What happens next</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);line-height:1.5;">
+          <iconify-icon icon="heroicons:envelope" style="font-size:16px;color:var(--accent);flex-shrink:0;margin-top:1px;"></iconify-icon>
+          You'll receive an approval email within 24–48 hours
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);line-height:1.5;">
+          <iconify-icon icon="heroicons:building-storefront" style="font-size:16px;color:var(--accent);flex-shrink:0;margin-top:1px;"></iconify-icon>
+          Your store goes live immediately after approval
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);line-height:1.5;">
+          <iconify-icon icon="heroicons:shopping-bag" style="font-size:16px;color:var(--accent);flex-shrink:0;margin-top:1px;"></iconify-icon>
+          Start listing products right away from your seller dashboard
+        </div>
+      </div>
+    </div>
+    <a href="/auth/login/" class="btn-primary" style="padding:13px 28px;font-size:15px;">
+      Go to your account
+      <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+    </a>
+  </div>
+</div>
+{% endblock %}

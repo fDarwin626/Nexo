@@ -1,141 +1,183 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base.html" %}
+{% load humanize %}
 
-<h1>Manage Dispute — {{ dispute.seller_order.order.order_ref }}</h1>
-<a href="{% url 'disputes:admin_list' %}">← All Disputes</a>
+{% block title %}Dispute {{ dispute.seller_order.order.order_ref }} — Admin{% endblock %}
 
-<hr>
+{% block content %}
+<div style="max-width:960px;margin:0 auto;padding:40px 24px;">
 
-<h2>Dispute Info</h2>
-<p>Buyer: {{ dispute.buyer.full_name }} ({{ dispute.buyer.email }})</p>
-<p>Seller: {{ dispute.seller.store_name }}</p>
-<p>Reason: {{ dispute.get_reason_display }}</p>
-<p>Status: {{ dispute.get_status_display }}</p>
-<p>Opened: {{ dispute.created_at|date:"d M Y H:i" }}</p>
-<p>Overdue: {% if dispute.is_overdue %}YES — seller missed 48hr window{% else %}No{% endif %}</p>
+  <a href="/disputes/admin/all/" style="display:inline-flex;align-items:center;gap:6px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:24px;">
+    <iconify-icon icon="heroicons:arrow-left"></iconify-icon> All disputes
+  </a>
 
-<h3>Buyer Description</h3>
-<p>{{ dispute.description }}</p>
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
 
-<h3>Evidence</h3>
-{% if dispute.evidence_photo_1 %}<p>Photo 1: {{ dispute.evidence_photo_1 }}</p>{% endif %}
-{% if dispute.evidence_photo_2 %}<p>Photo 2: {{ dispute.evidence_photo_2 }}</p>{% endif %}
-{% if dispute.evidence_photo_3 %}<p>Photo 3: {{ dispute.evidence_photo_3 }}</p>{% endif %}
-{% if dispute.evidence_video_url %}
-    <p>Video: <a href="{{ dispute.evidence_video_url }}" target="_blank">View</a></p>
-{% endif %}
+    <div>
+      {# Dispute summary #}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--text);">{{ dispute.seller_order.order.order_ref }}</div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);margin-top:2px;">{{ dispute.get_reason_display }} · Opened {{ dispute.created_at|date:"M d, Y" }}</div>
+          </div>
+          <span style="padding:5px 14px;border-radius:20px;font-family:'Satoshi',sans-serif;font-size:12px;font-weight:700;
+            {% if dispute.status == 'escalated' %}background:#FEE2E2;color:#991B1B;
+            {% elif 'resolved' in dispute.status %}background:#DCFCE7;color:#166534;
+            {% else %}background:#FEF3C7;color:#92400E;{% endif %}">
+            {{ dispute.get_status_display }}
+          </span>
+        </div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);line-height:1.7;background:var(--surface-alt);padding:14px;border-radius:8px;">{{ dispute.description }}</div>
+        {% if dispute.evidence_photo_1 or dispute.evidence_photo_2 or dispute.evidence_photo_3 %}
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          {% if dispute.evidence_photo_1 %}<img src="{{ dispute.evidence_photo_1.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+          {% if dispute.evidence_photo_2 %}<img src="{{ dispute.evidence_photo_2.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+          {% if dispute.evidence_photo_3 %}<img src="{{ dispute.evidence_photo_3.url }}" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+        </div>
+        {% endif %}
+      </div>
 
-{% if dispute.seller_response %}
-<h3>Seller Response</h3>
-<p>{{ dispute.seller_response }}</p>
-{% endif %}
+      {# Message thread #}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;color:var(--text);">Admin ↔ Seller thread</div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-height:80px;">
+          {% for msg in dispute_messages %}
+          <div style="padding:12px 16px;border-radius:10px;
+            {% if msg.sender_type == 'admin' %}background:var(--accent-soft);border:1px solid rgba(201,80,42,0.2);
+            {% else %}background:var(--surface-alt);border:1px solid var(--border);margin-left:20px;{% endif %}">
+            <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:5px;">
+              {% if msg.sender_type == 'admin' %}You (Admin){% else %}{{ dispute.seller.store_name }}{% endif %}
+              · {{ msg.created_at|date:"M d, H:i" }}
+            </div>
+            <div style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);line-height:1.6;">{{ msg.message }}</div>
+          </div>
+          {% empty %}
+          <p style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-align:center;padding:16px 0;">No messages yet. Send the first message below to initiate contact with the seller.</p>
+          {% endfor %}
+        </div>
+      </div>
 
-<hr>
+      {# Send message #}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">Send message to seller</div>
+        <form method="post" action="/disputes/admin/{{ dispute.pk }}/message/">
+          {% csrf_token %}
+          <textarea name="message" rows="3" placeholder="Message to seller..."
+            style="width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;resize:vertical;min-height:70px;box-sizing:border-box;" required></textarea>
+          <button type="submit" class="btn-primary" style="margin-top:8px;padding:9px 20px;font-size:13px;">
+            <iconify-icon icon="heroicons:paper-airplane"></iconify-icon> Send
+          </button>
+        </form>
+      </div>
 
-<h2>Message Thread (Admin ↔ Seller)</h2>
-{% if dispute_messages %}
-    {% for msg in dispute_messages %}
-    <div style="border:1px solid #999; padding:8px; margin:5px 0;">
-        <strong>{{ msg.sender_type|upper }}</strong>
-        — {{ msg.created_at|date:"d M Y H:i" }}<br>
-        {{ msg.message }}
+      {# Resolve #}
+      {% if 'resolved' not in dispute.status and dispute.status != 'closed' %}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px;">Resolve dispute</div>
+        <form method="post" action="/disputes/admin/{{ dispute.pk }}/resolve/">
+          {% csrf_token %}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Resolution</label>
+              <select name="resolution" style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;" required>
+                <option value="">Select outcome...</option>
+                <option value="resolved_refund">Refund issued</option>
+                <option value="resolved_kept">Buyer keeps item</option>
+                <option value="resolved_replace">Replacement sent</option>
+                <option value="closed">Close dispute</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Compensation ₦</label>
+              <input type="number" name="compensation_amount" min="0" step="0.01" placeholder="0 if none"
+                style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Compensation source</label>
+            <select name="compensation_source" style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;">
+              <option value="">Not applicable</option>
+              <option value="seller">From seller payout</option>
+              <option value="reserve_fund">From reserve fund</option>
+              <option value="both">Split 50/50</option>
+            </select>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Admin decision (shown to both parties)</label>
+            <textarea name="admin_decision" rows="3"
+              style="width:100%;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;resize:vertical;box-sizing:border-box;" required></textarea>
+          </div>
+          <button type="submit" class="btn-primary" style="padding:10px 22px;font-size:13px;background:var(--success);">
+            <iconify-icon icon="heroicons:check"></iconify-icon> Resolve dispute
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <div style="background:#DCFCE7;border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:16px 20px;margin-bottom:16px;font-family:'Satoshi',sans-serif;font-size:13px;color:#166534;">
+        <strong>Resolved:</strong> {{ dispute.get_status_display }}
+        {% if dispute.admin_decision %} — {{ dispute.admin_decision }}{% endif %}
+        {% if dispute.compensation_amount %} · ₦{{ dispute.compensation_amount|floatformat:0|intcomma }} from {{ dispute.compensation_source }}{% endif %}
+      </div>
+      {% endif %}
+
+      {# Issue strike #}
+      <div style="background:var(--surface);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;">
+        <div style="font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;color:var(--danger);margin-bottom:6px;">Issue strike to {{ dispute.seller.store_name }}</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-bottom:14px;">Current strikes: {{ dispute.seller.strike_count }} / 4 — Strike 4 = permanent ban</div>
+        {% if strikes %}
+        <div style="margin-bottom:12px;">
+          {% for strike in strikes %}
+          <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-weight:600;color:var(--danger);">{{ strike.get_level_display }}</span> — {{ strike.reason }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <form method="post" action="/disputes/admin/{{ dispute.pk }}/strike/">
+          {% csrf_token %}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+            <div>
+              <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Strike level</label>
+              <select name="level" style="width:100%;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;" required>
+                <option value="">Select level...</option>
+                {% for value, label in strike_level_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Action taken</label>
+              <input type="text" name="action_taken" placeholder="eg Store suspended" style="width:100%;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;box-sizing:border-box;">
+            </div>
+          </div>
+          <textarea name="reason" rows="2" placeholder="Reason for strike..."
+            style="width:100%;padding:9px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text);outline:none;resize:none;margin-bottom:10px;box-sizing:border-box;" required></textarea>
+          <button type="submit" style="padding:9px 20px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-family:'Satoshi',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
+            <iconify-icon icon="heroicons:shield-exclamation"></iconify-icon> Issue strike
+          </button>
+        </form>
+      </div>
     </div>
-    {% endfor %}
-{% else %}
-    <p>No messages yet. Send first message below to initiate thread.</p>
-{% endif %}
 
-<h3>Send Message to Seller</h3>
-<form method="post" action="{% url 'disputes:admin_message' dispute_id=dispute.pk %}">
-    {% csrf_token %}
-    <textarea name="message" rows="4" cols="60" placeholder="Message to seller..." required></textarea><br>
-    <button type="submit">Send Message</button>
-</form>
+    {# Sidebar #}
+    <div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;">Buyer</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--text);">{{ dispute.buyer.full_name }}</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">{{ dispute.buyer.email }}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;">
+        <div style="font-family:'Satoshi',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;">Seller</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:600;color:var(--text);">{{ dispute.seller.store_name }}</div>
+        <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);margin-top:2px;">Strikes: {{ dispute.seller.strike_count }}</div>
+        {% if dispute.evidence_video_url %}
+        <a href="{{ dispute.evidence_video_url }}" target="_blank" style="display:flex;align-items:center;gap:6px;margin-top:10px;font-family:'Satoshi',sans-serif;font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;">
+          <iconify-icon icon="heroicons:video-camera" style="font-size:14px;"></iconify-icon> View evidence video
+        </a>
+        {% endif %}
+      </div>
+    </div>
 
-<hr>
-
-<h2>Resolve Dispute</h2>
-{% if dispute.status not in 'closed,resolved_refund,resolved_kept,resolved_replace' %}
-<form method="post" action="{% url 'disputes:admin_resolve' dispute_id=dispute.pk %}">
-    {% csrf_token %}
-
-    <p>
-        <label>Resolution:</label><br>
-        <select name="resolution" required>
-            <option value="">-- Select --</option>
-            <option value="resolved_refund">Refund Issued</option>
-            <option value="resolved_kept">Buyer Keeps Item</option>
-            <option value="resolved_replace">Replacement Sent</option>
-            <option value="closed">Close Dispute</option>
-        </select>
-    </p>
-
-    <p>
-        <label>Admin Decision (shown to both parties):</label><br>
-        <textarea name="admin_decision" rows="4" cols="60" required></textarea>
-    </p>
-
-    <p>
-        <label>Compensation Amount ₦ (optional):</label><br>
-        <input type="number" name="compensation_amount" min="0" step="0.01">
-    </p>
-
-    <p>
-        <label>Compensation Source:</label><br>
-        <select name="compensation_source">
-            <option value="">Not Applicable</option>
-            <option value="seller">From Seller Payout</option>
-            <option value="reserve_fund">From Reserve Fund</option>
-            <option value="both">Split (50/50)</option>
-        </select>
-    </p>
-
-    <button type="submit">Resolve Dispute</button>
-</form>
-{% else %}
-    <p>This dispute is already resolved ({{ dispute.get_status_display }}).</p>
-    {% if dispute.admin_decision %}
-        <p>Decision: {{ dispute.admin_decision }}</p>
-    {% endif %}
-    {% if dispute.compensation_amount %}
-        <p>Compensation: ₦{{ dispute.compensation_amount }} from {{ dispute.compensation_source }}</p>
-    {% endif %}
-{% endif %}
-
-<hr>
-
-<h2>Issue Strike to Seller</h2>
-<p>Current Strike Count: {{ dispute.seller.strike_count }}</p>
-{% if strikes %}
-    <p>Strikes on this dispute:</p>
-    {% for strike in strikes %}
-        <p>— {{ strike.get_level_display }}: {{ strike.reason }}</p>
-    {% endfor %}
-{% endif %}
-
-<form method="post" action="{% url 'disputes:admin_strike' dispute_id=dispute.pk %}">
-    {% csrf_token %}
-    <p>
-        <label>Strike Level:</label><br>
-        <select name="level" required>
-            <option value="">-- Select --</option>
-            {% for value, label in strike_level_choices %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-        </select>
-    </p>
-    <p>
-        <label>Reason:</label><br>
-        <textarea name="reason" rows="3" cols="60" required></textarea>
-    </p>
-    <p>
-        <label>Action Taken:</label><br>
-        <input type="text" name="action_taken" cols="60"
-            placeholder="eg Store suspended, ₦50,000 deducted from payout">
-    </p>
-    <button type="submit" style="color:red;">Issue Strike</button>
-</form>
-
-</body>
-</html>
+  </div>
+</div>
+{% endblock %}

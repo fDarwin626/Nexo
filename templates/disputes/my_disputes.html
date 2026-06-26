@@ -1,36 +1,149 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base/base.html" %}
 
-<h1>My Disputes</h1>
-<a href="/">← Home</a>
+{% block title %}Open Dispute — Nexo{% endblock %}
 
-<hr>
+{% block extra_head %}
+<style>
+.dispute-open-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.dispute-order-card {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.field-group { margin-bottom: 20px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.field-select, .field-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.field-select:focus, .field-textarea:focus { border-color: var(--accent); }
+.field-textarea { resize: vertical; min-height: 100px; }
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.upload-area:hover { border-color: var(--accent); }
+.warning-box {
+  background: #FEF3C7;
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: #92400E;
+  line-height: 1.5;
+}
+[data-theme="dark"] .warning-box { background: #451A03; color: #FCD34D; border-color: rgba(245,158,11,0.3); }
+</style>
+{% endblock %}
 
-{% if disputes %}
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Order Ref</th>
-        <th>Seller</th>
-        <th>Reason</th>
-        <th>Status</th>
-        <th>Opened</th>
-        <th>Actions</th>
-    </tr>
-    {% for dispute in disputes %}
-    <tr>
-        <td>{{ dispute.seller_order.order.order_ref }}</td>
-        <td>{{ dispute.seller.store_name }}</td>
-        <td>{{ dispute.get_reason_display }}</td>
-        <td>{{ dispute.get_status_display }}</td>
-        <td>{{ dispute.created_at|date:"d M Y" }}</td>
-        <td><a href="{% url 'disputes:detail' dispute_id=dispute.pk %}">View</a></td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-    <p>No disputes opened.</p>
-{% endif %}
+{% block content %}
+<div class="dispute-open-wrap">
 
-</body>
-</html>
+  <a href="/orders/{{ seller_order.order.order_ref }}/" style="display:inline-flex;align-items:center;gap:6px;font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);text-decoration:none;margin-bottom:24px;">
+    <iconify-icon icon="heroicons:arrow-left"></iconify-icon>
+    Back to order
+  </a>
+
+  <h1 style="font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:8px;">Open a dispute</h1>
+  <p style="font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text-muted);margin-bottom:28px;line-height:1.6;">Tell us what went wrong. The seller has 48 hours to respond before admin steps in.</p>
+
+  {# Order context #}
+  <div class="dispute-order-card">
+    <div style="width:44px;height:44px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <iconify-icon icon="heroicons:shopping-bag" style="font-size:20px;color:var(--text-muted);"></iconify-icon>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text-muted);">{{ seller_order.order.order_ref }}</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:14px;font-weight:700;color:var(--text);">{{ seller_order.seller.store_name }}</div>
+      <div style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">₦{{ seller_order.seller_payout|floatformat:0 }} · {{ seller_order.get_status_display }}</div>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <iconify-icon icon="heroicons:exclamation-triangle" style="font-size:18px;flex-shrink:0;margin-top:1px;"></iconify-icon>
+    <span>Only open a dispute if you genuinely have an issue. Frivolous disputes may result in reduced POD access.</span>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="field-group">
+      <label class="field-label">What went wrong?</label>
+      <select name="reason" class="field-select" required>
+        <option value="">Select a reason...</option>
+        {% for value, label in reason_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Describe the issue</label>
+      <textarea name="description" class="field-textarea" rows="5"
+        placeholder="Be specific — what did you order, what arrived (or didn't), what condition was it in..." required></textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Evidence photos (optional, max 3)</label>
+      <div class="upload-area">
+        <iconify-icon icon="heroicons:photo" style="font-size:28px;color:var(--text-muted);display:block;margin:0 auto 8px;"></iconify-icon>
+        <div style="font-family:'Satoshi',sans-serif;font-size:13px;color:var(--text-muted);">Upload photos of the issue</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+          <input type="file" name="evidence_photo_1" accept="image/*" style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+          <input type="file" name="evidence_photo_2" accept="image/*" style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+          <input type="file" name="evidence_photo_3" accept="image/*" style="font-family:'Satoshi',sans-serif;font-size:12px;color:var(--text-muted);">
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Video evidence URL (optional)</label>
+      <input type="url" name="evidence_video_url"
+        style="width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-family:'Satoshi',sans-serif;font-size:14px;color:var(--text);outline:none;box-sizing:border-box;"
+        placeholder="YouTube or Google Drive link">
+    </div>
+
+    <button type="submit" style="width:100%;padding:14px;background:var(--danger);color:#fff;border:none;border-radius:10px;font-family:'Satoshi',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+      <iconify-icon icon="heroicons:exclamation-triangle"></iconify-icon>
+      Submit dispute
+    </button>
+  </form>
+
+</div>
+{% endblock %}

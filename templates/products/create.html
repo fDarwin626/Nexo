@@ -1,51 +1,784 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h1>Add New Product</h1>
-    <form method="post" id="product-form">
-        {% csrf_token %}
-        {{ form.as_p }}
+{% extends "base/base_seller.html" %}
+{% load static %}
+{% load humanize %}
 
-        <div id="variants-section">
-            <h3>Product Variants</h3>
-            <p>Select a category above to see required variants.</p>
+{% block title %}List a product — {{ seller.store_name }}{% endblock %}
+
+{% block seller_extra_head %}
+<style>
+/* ── LAYOUT ── */
+.list-wrap {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 48px;
+  align-items: start;
+}
+
+/* ── NUMBERED RAIL ── */
+.rail-step {
+  position: relative;
+  padding-left: 44px;
+  padding-bottom: 44px;
+}
+.rail-step:last-child { padding-bottom: 0; }
+.rail-step::before {
+  /* the connecting "string" line */
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 34px;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--border);
+}
+.rail-step:last-child::before { display: none; }
+.rail-num {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  z-index: 1;
+}
+.rail-step.is-complete .rail-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FAF7F5;
+}
+.rail-title {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.rail-sub {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* ── FIELDS ── */
+.field-group { margin-bottom: 16px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-label {
+  display: block;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+}
+.field-input, .field-select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field-input:focus, .field-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(201,80,42,0.1);
+}
+.field-textarea {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+.field-textarea:focus { border-color: var(--accent); }
+.field-hint {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 5px;
+}
+.price-input-wrap { position: relative; }
+.price-input-wrap .currency-mark {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.price-input-wrap input { padding-left: 32px; }
+
+/* ── CATEGORY PICKER (top-level cards) ── */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.cat-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-pick:hover { border-color: var(--accent); }
+.cat-pick.selected { border-color: var(--accent); background: var(--accent-soft); }
+.cat-pick iconify-icon { font-size: 24px; color: var(--text-muted); }
+.cat-pick.selected iconify-icon { color: var(--accent); }
+.cat-pick span {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+}
+
+/* ── SUBCATEGORY CHIPS ── */
+.sub-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.sub-chip {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sub-chip:hover { border-color: var(--accent); }
+.sub-chip.selected { background: var(--accent); border-color: var(--accent); color: #FAF7F5; }
+.sub-chip-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px dashed var(--border);
+  background: transparent;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.sub-chip-new:hover { border-color: var(--accent); color: var(--accent); }
+.new-sub-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── DROPZONE ── */
+.dropzone {
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone iconify-icon { font-size: 32px; color: var(--text-muted); display: block; margin-bottom: 8px; }
+.dropzone-text { font-family: 'Satoshi', sans-serif; font-size: 13px; color: var(--text-muted); }
+.dropzone-text strong { color: var(--accent); }
+
+/* ── VARIANT TYPE BLOCK ── */
+.variant-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--surface);
+}
+.variant-block-title {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.variant-opt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.variant-opt-chip {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.variant-opt-chip.selected { background: var(--accent); border-color: var(--accent); color: #FAF7F5; }
+
+/* ── SKU TABLE ── */
+.sku-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.sku-table th {
+  text-align: left;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 10px 8px;
+}
+.sku-table td { padding: 6px 10px 6px 0; }
+.sku-table tr { border-bottom: 1px solid var(--border); }
+.sku-combo-label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sku-table input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+}
+.sku-table input:focus { border-color: var(--accent); }
+.no-variant-note {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 14px;
+  background: var(--surface-alt);
+  border-radius: 10px;
+}
+
+/* ── FLASH SALE TOGGLE ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 16px;
+}
+.toggle-label { font-family: 'Satoshi', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); }
+.toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* ── SUBMIT BAR ── */
+.submit-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  padding-left: 44px;
+}
+.submit-btn {
+  padding: 13px 28px;
+  background: var(--accent);
+  color: #FAF7F5;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ── LIVE PREVIEW — hanging price tag ── */
+.tag-rail { position: sticky; top: 24px; }
+.tag-string {
+  width: 1.5px;
+  height: 28px;
+  background: var(--border);
+  margin: 0 auto;
+}
+.tag-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  transform: rotate(-1.2deg);
+  transition: transform 0.3s ease;
+}
+.tag-card:hover { transform: rotate(0deg); }
+.tag-punch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  z-index: 2;
+}
+.tag-img {
+  width: 100%;
+  height: 220px;
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  position: relative;
+  overflow: hidden;
+}
+.tag-img img { width: 100%; height: 100%; object-fit: cover; }
+.tag-img iconify-icon { font-size: 40px; }
+.tag-body { padding: 16px; }
+.tag-store {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.tag-name {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 10px;
+  min-height: 36px;
+}
+.tag-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.tag-price {
+  font-family: 'DM Mono', monospace;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+}
+.tag-price.has-discount { color: var(--accent); }
+.tag-price-old {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.tag-note {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .list-wrap { grid-template-columns: 1fr; }
+  .tag-rail { position: static; max-width: 280px; margin: 0 auto 32px; }
+  .field-row { grid-template-columns: 1fr; }
+  .submit-bar { padding-left: 0; }
+}
+</style>
+{% endblock %}
+
+{% block seller_content %}
+
+<form method="post" id="product-form" x-data="productListing()" @submit="onSubmit">
+{% csrf_token %}
+
+<div class="seller-page-header">
+  <div>
+    <div class="seller-page-title">List a product</div>
+    <div class="seller-page-sub">Photos come next — get the details right first</div>
+  </div>
+</div>
+
+<div class="list-wrap">
+
+  {# ── LEFT: STEPS ── #}
+  <div>
+
+    {# STEP 1 — BASICS #}
+    <div class="rail-step" :class="{ 'is-complete': name.length > 2 }">
+      <div class="rail-num">1</div>
+      <div class="rail-title">The basics</div>
+      <div class="rail-sub">What is it, and what condition is it in?</div>
+
+      <div class="field-group">
+        <label class="field-label">Product name</label>
+        <input type="text" name="name" class="field-input" placeholder="eg Nike Air Force 1 — White" x-model="name" maxlength="255" required>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Description</label>
+        <textarea name="description" class="field-textarea" placeholder="What makes this worth buying? Mention material, fit, what's included..." required></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Condition</label>
+        <select name="condition" class="field-select" required>
+          <option value="brand_new">Brand New (Sealed)</option>
+          <option value="new" selected>New</option>
+          <option value="nigerian_used">Nigerian Used</option>
+          <option value="refurbished">Refurbished</option>
+          <option value="for_parts">For Parts Only</option>
+        </select>
+      </div>
+    </div>
+
+    {# STEP 2 — CATEGORY #}
+    <div class="rail-step" :class="{ 'is-complete': selectedCategoryId }">
+      <div class="rail-num">2</div>
+      <div class="rail-title">Category</div>
+      <div class="rail-sub">Pick where this lives. You can only choose a subcategory that already exists, or add a new one under an admin category.</div>
+
+      <div class="cat-grid">
+        <template x-for="cat in topLevelCategories" :key="cat.id">
+          <div class="cat-pick" :class="{ selected: selectedParentId === cat.id }" @click="selectParent(cat.id)">
+            <iconify-icon :icon="cat.icon || 'mdi:tag'"></iconify-icon>
+            <span x-text="cat.name"></span>
+          </div>
+        </template>
+      </div>
+
+      <template x-if="selectedParentId">
+        <div>
+          <label class="field-label">Subcategory</label>
+          <div class="sub-chip-row">
+            <template x-for="sub in subcategoriesForParent" :key="sub.id">
+              <div class="sub-chip" :class="{ selected: selectedCategoryId === sub.id }" @click="selectSubcategory(sub.id)" x-text="sub.name"></div>
+            </template>
+            <div class="sub-chip-new" @click="addingNewSub = !addingNewSub" x-show="!addingNewSub">
+              <iconify-icon icon="heroicons:plus" style="font-size:14px;"></iconify-icon>
+              Don't see yours? Add one
+            </div>
+          </div>
+          <div class="new-sub-input-row" x-show="addingNewSub" x-cloak>
+            <input type="text" class="field-input" placeholder="eg Smart Watches" x-model="newSubcategoryName" maxlength="100">
+          </div>
+          <p class="field-hint" x-show="addingNewSub" x-cloak>This becomes available to every seller under this category — no duplicates.</p>
         </div>
+      </template>
 
-        <div id="skus-section">
-            <h3>Stock & Pricing</h3>
-            <p>Add variant combinations with stock and pricing below.</p>
+      {# Hidden fields the view expects #}
+      <input type="hidden" name="category" :value="selectedCategoryId">
+      <input type="hidden" name="new_subcategory" :value="addingNewSub ? newSubcategoryName : ''">
+      <input type="hidden" name="parent_category_id" :value="selectedParentId">
+    </div>
+
+    {# STEP 3 — PRICING #}
+    <div class="rail-step" :class="{ 'is-complete': basePrice > 0 }">
+      <div class="rail-num">3</div>
+      <div class="rail-title">Pricing</div>
+      <div class="rail-sub">Set the base price — each variant below can override it if needed.</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Base price (₦)</label>
+          <div class="price-input-wrap">
+            <span class="currency-mark">₦</span>
+            <input type="number" name="base_price" class="field-input" placeholder="25000" min="0" step="100" x-model.number="basePrice" required>
+          </div>
         </div>
+        <div class="field-group">
+          <label class="field-label">Discount % (optional)</label>
+          <input type="number" name="discount_percent" class="field-input" placeholder="0" min="0" max="50" x-model.number="discountPercent">
+        </div>
+      </div>
 
-        <!-- SKU data submitted as JSON -->
-        <input type="hidden" name="skus_data" id="skus-data" value="[]">
+      <div class="toggle-row">
+        <span class="toggle-label">Run this as a flash sale</span>
+        <label class="toggle-switch">
+          <input type="checkbox" name="is_flash_sale" x-model="isFlashSale">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
 
-        <button type="submit">Save Product →</button>
-    </form>
+      <template x-if="isFlashSale">
+        <div x-cloak>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Flash sale price (₦)</label>
+              <input type="number" name="flash_sale_price" class="field-input" min="0" step="100">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Limited quantity</label>
+              <input type="number" name="flash_sale_quantity" class="field-input" min="1">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Starts</label>
+              <input type="datetime-local" name="flash_sale_start" class="field-input">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Ends</label>
+              <input type="datetime-local" name="flash_sale_end" class="field-input">
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
 
-    <script>
-        // Category variants data from Django
-        const categoriesWithVariants = {{ categories_with_variants|safe }};
+    {# STEP 4 — VARIANTS & STOCK #}
+    <div class="rail-step">
+      <div class="rail-num">4</div>
+      <div class="rail-title">Variants &amp; stock</div>
+      <div class="rail-sub" x-text="requiredVariants.length ? 'This category requires the variants below — pick at least one option per type.' : 'No variants required for this category — just set total stock.'"></div>
 
-        document.querySelector('[name=category]').addEventListener('change', function() {
-            const categoryId = this.value;
-            const data = categoriesWithVariants[categoryId];
-            const section = document.getElementById('variants-section');
+      <template x-if="requiredVariants.length">
+        <div>
+          <template x-for="vt in requiredVariants" :key="vt.id">
+            <div class="variant-block">
+              <div class="variant-block-title" x-text="vt.name"></div>
+              <div class="variant-opt-grid">
+                <template x-for="opt in vt.options" :key="opt.id">
+                  <div class="variant-opt-chip" :class="{ selected: isOptionSelected(vt.id, opt.id) }" @click="toggleOption(vt.id, opt.id)" x-text="opt.value"></div>
+                </template>
+              </div>
+            </div>
+          </template>
 
-            if (data && data.required_variants.length > 0) {
-                let html = '<h3>Required Variants for ' + data.name + '</h3>';
-                data.required_variants.forEach(vt => {
-                    html += '<div><strong>' + vt.name + '</strong><select name="variant_' + vt.id + '">';
-                    vt.options.forEach(opt => {
-                        html += '<option value="' + opt.id + '">' + opt.value + '</option>';
-                    });
-                    html += '</select></div>';
-                });
-                section.innerHTML = html;
-            } else {
-                section.innerHTML = '<h3>No variants required for this category</h3>';
-            }
-        });
-    </script>
-</body>
-</html>
+          <template x-if="skuCombinations.length">
+            <table class="sku-table">
+              <thead>
+                <tr>
+                  <th>Combination</th>
+                  <th style="width:140px;">Stock</th>
+                  <th style="width:160px;">Price override</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(combo, idx) in skuCombinations" :key="combo.key">
+                  <tr>
+                    <td class="sku-combo-label" x-text="combo.label"></td>
+                    <td><input type="number" min="0" placeholder="0" x-model.number="combo.stock"></td>
+                    <td><input type="number" min="0" placeholder="Same as base" x-model.number="combo.priceOverride"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </template>
+        </div>
+      </template>
 
+      <template x-if="!requiredVariants.length">
+        <div>
+          <div class="field-group" style="max-width:200px;">
+            <label class="field-label">Total stock</label>
+            <input type="number" class="field-input" min="0" x-model.number="simpleStock" placeholder="0">
+          </div>
+        </div>
+      </template>
+
+      <input type="hidden" name="skus_data" :value="serializedSkus">
+    </div>
+
+  </div>
+
+  {# ── RIGHT: LIVE TAG PREVIEW ── #}
+  <div class="tag-rail">
+    <div class="tag-string"></div>
+    <div class="tag-card">
+      <div class="tag-punch"></div>
+      <div class="tag-img">
+        <iconify-icon icon="heroicons:photo"></iconify-icon>
+      </div>
+      <div class="tag-body">
+        <div class="tag-store">{{ seller.store_name|default:"Your store" }}</div>
+        <div class="tag-name" x-text="name || 'Your product name appears here'"></div>
+        <div class="tag-price-row">
+          <span class="tag-price" :class="{ 'has-discount': discountPercent > 0 }" x-text="formattedPrice"></span>
+          <span class="tag-price-old" x-show="discountPercent > 0" x-text="formattedOriginalPrice"></span>
+        </div>
+      </div>
+    </div>
+    <p class="tag-note">This is how buyers will see it on the marketplace and your storefront. Photos get added on the next screen.</p>
+  </div>
+
+</div>
+
+<div class="submit-bar">
+  <button type="submit" class="submit-btn">
+    <iconify-icon icon="heroicons:arrow-right"></iconify-icon>
+    Save and add photos
+  </button>
+</div>
+
+</form>
+
+<script>
+function productListing() {
+  return {
+    categoriesData: {{ categories_with_variants|safe }},
+    topLevelCategories: [
+      {% for cat in top_level_categories %}
+      { id: {{ cat.pk }}, name: '{{ cat.name|escapejs }}', icon: '{{ cat.icon|escapejs }}' },
+      {% endfor %}
+    ],
+
+    name: '',
+    basePrice: null,
+    discountPercent: 0,
+    isFlashSale: false,
+
+    selectedParentId: null,
+    selectedCategoryId: null,
+    addingNewSub: false,
+    newSubcategoryName: '',
+
+    selectedOptions: {}, // { variantTypeId: [optionId, ...] }
+    skuCombinations: [],
+    simpleStock: 0,
+
+    get subcategoriesForParent() {
+      if (!this.selectedParentId) return [];
+      const subs = [];
+      for (const [id, data] of Object.entries(this.categoriesData)) {
+        if (data.parent_id === this.selectedParentId) {
+          subs.push({ id: parseInt(id), name: data.name });
+        }
+      }
+      return subs;
+    },
+
+    get requiredVariants() {
+      if (!this.selectedCategoryId) return [];
+      const data = this.categoriesData[this.selectedCategoryId];
+      return data ? data.required_variants : [];
+    },
+
+    selectParent(id) {
+      this.selectedParentId = id;
+      this.selectedCategoryId = null;
+      this.addingNewSub = false;
+      this.newSubcategoryName = '';
+      this.selectedOptions = {};
+    },
+
+    selectSubcategory(id) {
+      this.selectedCategoryId = id;
+      this.addingNewSub = false;
+      this.selectedOptions = {};
+      this.rebuildCombinations();
+    },
+
+    isOptionSelected(typeId, optId) {
+      return (this.selectedOptions[typeId] || []).includes(optId);
+    },
+
+    toggleOption(typeId, optId) {
+      if (!this.selectedOptions[typeId]) this.selectedOptions[typeId] = [];
+      const arr = this.selectedOptions[typeId];
+      const i = arr.indexOf(optId);
+      if (i === -1) arr.push(optId); else arr.splice(i, 1);
+      this.rebuildCombinations();
+    },
+
+    rebuildCombinations() {
+      const types = this.requiredVariants;
+      const selected = types.map(vt => (this.selectedOptions[vt.id] || []).map(optId => {
+        const opt = vt.options.find(o => o.id === optId);
+        return { typeId: vt.id, optId, value: opt ? opt.value : '' };
+      }));
+
+      if (selected.some(arr => arr.length === 0)) {
+        this.skuCombinations = [];
+        return;
+      }
+
+      let combos = [[]];
+      for (const group of selected) {
+        const next = [];
+        for (const combo of combos) {
+          for (const item of group) {
+            next.push([...combo, item]);
+          }
+        }
+        combos = next;
+      }
+
+      const existing = {};
+      this.skuCombinations.forEach(c => existing[c.key] = c);
+
+      this.skuCombinations = combos.map(combo => {
+        const key = combo.map(c => c.optId).sort((a,b) => a-b).join('-');
+        const label = combo.map(c => c.value).join(' + ');
+        return existing[key] || { key, label, optionIds: combo.map(c => c.optId), stock: 0, priceOverride: null };
+      });
+    },
+
+    get serializedSkus() {
+      if (this.requiredVariants.length === 0) {
+        return JSON.stringify([{ variant_options: [], stock: this.simpleStock || 0, price_override: null }]);
+      }
+      return JSON.stringify(this.skuCombinations.map(c => ({
+        variant_options: c.optionIds,
+        stock: c.stock || 0,
+        price_override: c.priceOverride || null,
+      })));
+    },
+
+    get formattedPrice() {
+      const price = this.discountPercent > 0
+        ? this.basePrice * (1 - this.discountPercent / 100)
+        : this.basePrice;
+      return '₦' + (price || 0).toLocaleString('en-NG', { maximumFractionDigits: 0 });
+    },
+    get formattedOriginalPrice() {
+      return '₦' + (this.basePrice || 0).toLocaleString('en-NG', { maximumFractionDigits: 0 });
+    },
+
+    onSubmit(e) {
+      if (!this.selectedCategoryId && !this.addingNewSub) {
+        e.preventDefault();
+        alert('Please choose or add a subcategory before saving.');
+      }
+    },
+  };
+}
+</script>
+
+{% endblock %}
